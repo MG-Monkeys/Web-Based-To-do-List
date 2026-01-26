@@ -4,9 +4,9 @@ ASE 285 team project building a web-based todo list using Javascript, NodeJs, an
 # Our Team
 
   - (Leader) Nate Brewer - Brewern5@mymail.nku.edu
-  - (Member) Philip Bierley
-  - (Member) Danny Poff
-  - (Member) Jack Dixon
+  - (Member) Philip Bierley - Database 
+  - (Member) Danny Poff - Backend
+  - (Member) Jack Dixon - Frontend
 
 ------------------------------------------
 # Project overview
