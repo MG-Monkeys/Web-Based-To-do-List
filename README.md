@@ -126,7 +126,7 @@ By signing below, all team members agree to follow these rules:
     - Hit the specific browsers API to send notifs
     - User-set notification time
 
-(Start) Create a mascot that also acts like a chatbot (Monkey-see Monkey-do)
+5. (Start) Create a mascot that also acts like a chatbot (Monkey-see Monkey-do)
     - GenAI API for the chatbot. 
     - Interact with to-dos (Have celebrations/negative reactions when one is not done)
     - Create per-page popup that the user can interact with
@@ -134,7 +134,7 @@ By signing below, all team members agree to follow these rules:
 
 ## Sprint 3:
 
-(Start) Group to-do list for team projects
+6. (Start) Group to-do list for team projects
     - Non-authed p2p invitiation 
     - Database collection of the group
     - Accept/Decline invitation page/popup
