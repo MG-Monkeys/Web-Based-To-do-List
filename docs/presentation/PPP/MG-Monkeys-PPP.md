@@ -106,27 +106,19 @@ Users struggle to effectively manage and organize their daily tasks in an entert
 ### Sprint 1 Deliverables
 1. Adding **tags** to the to-do list items      
 2. Front-End **user customization**
+3. Using **AI** to automatically **generate tags**
+4. Adding **notifications** to the browser 
+5. (Start) Create a **mascot** that also acts like a **chatbot** (Monkey-see Monkey-do)
+
+-----------------------------
+# Development Roadmap (Cont.)
 
 ### Sprint 2 Deliverables
 
-3. Using **AI** to automatically **generate tags**
-4. Adding **notifications** to the browser 
-
-5. (Start) Create a **mascot** that also acts like a **chatbot** (Monkey-see Monkey-do)
-
----
-
-### Sprint 3 Deliverables
 6. (Start) **Group to-do list** for team projects
 7. **Recurring to-dos**
-
-
-### Sprint 4 Deliverables
-
 8. (Finish) Create a **mascot** that also acts like a **chatbot** (Monkey-see Monkey-do)
-
-9. (Finish) **Group to-do list** for team projects
-
+9.  (Finish) **Group to-do list** for team projects
 10. **Email notifications** (SMS - Maybe)
 
 ---
