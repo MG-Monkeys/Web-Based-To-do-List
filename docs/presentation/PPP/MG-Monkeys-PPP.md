@@ -118,8 +118,7 @@ Users struggle to effectively manage and organize their daily tasks in an entert
 6. (Start) **Group to-do list** for team projects
 7. **Recurring to-dos**
 8. (Finish) Create a **mascot** that also acts like a **chatbot** (Monkey-see Monkey-do)
-9.  (Finish) **Group to-do list** for team projects
-10. **Email notifications** (SMS - Maybe)
+9.  **Email notifications** (SMS - Maybe)
 
 ---
 
