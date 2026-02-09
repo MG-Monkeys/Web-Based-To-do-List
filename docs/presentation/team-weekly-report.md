@@ -24,17 +24,15 @@ INSTRUCTIONS
 
 # Week Goals
 
-- Create MongoDB Tables
-- Begin tag creation
-- Refactor Frontend - implement react
+- 
 
-**Burndown rate:** 4/26 (15%) requirements
+**Burndown rate:** __
 
 ---
 
 # Code Stats
 
-**Total lines of code (LOC):** 203
+**Total lines of code (LOC):** __
 
 
 ---
@@ -43,10 +41,9 @@ INSTRUCTIONS
 
 **Role:** Frontend Design
 
-**LOC (this week):** 196
+**LOC (this week):** ___
 
-- Implemented FullCalendar and its content injection
-- Front end redesign
+- 
 
 
 ---
@@ -55,10 +52,9 @@ INSTRUCTIONS
 
 **Role:** Database Engineer
 
-**LOC (this week):** 
+**LOC (this week):** __
 
-- Creating Mongo tables
-- Began tying backend and DB together
+- 
 
 ---
 
@@ -66,9 +62,9 @@ INSTRUCTIONS
 
 **Role:** Backend Engineer
 
-**LOC (this week):** 7
+**LOC (this week):** 
 
-- Tags endpoints
+- 
 
 ---
 
