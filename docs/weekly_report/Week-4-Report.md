@@ -11,7 +11,7 @@ INSTRUCTIONS
 - Keep ASCII-only text unless you need special characters.
 -->
 
-# MG-Konkeys
+# MG-Monkeys
 
 **Team Lead:** Nate Brewer
 
