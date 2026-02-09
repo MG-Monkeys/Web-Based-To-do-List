@@ -51,9 +51,12 @@ app.get('/', function (req, res) {
 app.post('/add', async function (req, res) {
   try {
     const nextId = await getNextId();
+
+    var tags = req.body.tags.split(',').map(tag => tag.trim()) ?? [];
     
     const newPost = new Post({
       _id: nextId,
+      //tags: tags, // Add tags field
       title: req.body.title,
       date: req.body.date,
     });
