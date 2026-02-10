@@ -1,21 +1,20 @@
 @echo off
 
-REM Install backend dependencies if node_modules doesn't exist
-if not exist server\node_modules (
-    echo Installing dependencies...
-    call npm install
-)
+REM Install backend dependencies
+echo Installing server dependencies...
+pushd server
+call npm install
+popd
 
-REM Install frontend dependencies if client/node_modules doesn't exist
-if not exist client\node_modules (
-    echo Installing frontend dependencies...
-    cd client
-    call npm install
-    cd ..
+REM Install frontend dependencies
+echo Installing client dependencies...
+pushd client
+call npm install
+popd
 
-REM start both servers
+REM Start both servers in separate terminals
 echo Starting Todo App with Mongoose...
 echo Backend will run on http://localhost:5500
 echo Frontend will run on http://localhost:3000
-start cmd /k "cd server && npm start"
-start cmd /k "cd client && npm start"
+start cmd /k "cd /d %~dp0server && npm start"
+start cmd /k "cd /d %~dp0client && npm start"
