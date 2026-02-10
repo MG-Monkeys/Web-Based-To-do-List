@@ -1,0 +1,28 @@
+{
+  "name": "todoapp_mongoose",
+  "version": "1.0.0",
+  "description": "Todo app using Mongoose ODM",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"node index.js\" \"cd client && npm start\"",
+    "server": "node index.js",
+    "client": "cd client && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fullcalendar/react": "^6.1.20",
+    "dotenv": "^17.2.3",
+    "ejs": "^3.1.6",
+    "express": "^4.22.1",
+    "fullcalendar": "^6.1.20",
+    "method-override": "^3.0.0",
+    "mongodb": "^7.0.0",
+    "mongoose": "^7.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
