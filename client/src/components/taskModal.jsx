@@ -1,3 +1,5 @@
+import getFormattedDate from "../utils/getFormattedDate";
+
 export default function TaskModal({ isOpen, onClose, onAddTask }) {
   function handleSubmit(e) {
     e.preventDefault();
@@ -31,7 +33,7 @@ export default function TaskModal({ isOpen, onClose, onAddTask }) {
             <input
               type="Date"
               name="date"
-              defaultValue="2026-02-17"
+              defaultValue={getFormattedDate()}
               min="2026-02-01"
               max="2100-12-30"
             />
