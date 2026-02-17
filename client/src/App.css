@@ -101,6 +101,6 @@ label:has(textarea) {
 
 label {
   display: flex;
-  gap: 1vw;
+  gap: 0.5vw;
   justify-content: center;
 }
