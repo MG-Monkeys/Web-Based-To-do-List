@@ -1,7 +1,7 @@
 import FullCalendar from "@fullcalendar/react";
 import listPlugin from "@fullcalendar/list";
 
-export default function Calendar({ tasks }) {
+export default function TaskList({ tasks }) {
   return (
     <FullCalendar
       headerToolbar={""}

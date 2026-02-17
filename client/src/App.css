@@ -39,6 +39,7 @@
   border-radius: 8px;
   max-width: 500px;
   width: 90%;
+  justify-content: center;
 }
 
 .flexbox {
@@ -70,4 +71,13 @@ button {
   background-color: #dfddff;
   padding: 2%;
   margin: 5% 10% 10% 5%;
+}
+
+body {
+  background-color: #fefeff;
+}
+
+td {
+  padding: 5px;
+  text-align: left;
 }
