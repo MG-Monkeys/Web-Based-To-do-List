@@ -81,3 +81,26 @@ td {
   padding: 5px;
   text-align: left;
 }
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.time-row {
+  display: flex;
+  gap: 5vw;
+  justify-content: center;
+}
+
+label:has(textarea) {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  display: flex;
+  gap: 1vw;
+  justify-content: center;
+}
