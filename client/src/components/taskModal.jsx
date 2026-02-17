@@ -56,8 +56,10 @@ export default function TaskModal({ isOpen, onClose, onAddTask }) {
             <textarea rows="4" cols="30" name="description" />
           </label>
           <div>
-            <button type="submit">Add</button>
-            <button type="button " onClick={onClose}>
+            <button type="submit" className="modal-button">
+              Add
+            </button>
+            <button type="button" className="modal-button" onClick={onClose}>
               Cancel
             </button>
           </div>
