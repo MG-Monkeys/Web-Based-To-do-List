@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import methodOverride from "method-override";
 import Post from "./models/Post.js";
 import User from "./models/User.js";
+import Task from "./models/tasks.js";
 import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
 
@@ -180,5 +181,98 @@ app.post("/users", async function (req, res) {
     }
     console.error(error);
     return res.status(500).json({ error: "Error creating user" });
+  }
+});
+
+// API route - POST /tasks - Create a task in Tasks collection
+app.post("/tasks", async function (req, res) {
+  try {
+    const { title, description, status, startDate, endDate, completedAt, assignedTo } =
+      req.body;
+
+    if (!title || !description || !startDate || !assignedTo) {
+      return res.status(400).json({
+        error: "title, description, startDate, and assignedTo are required",
+      });
+    }
+
+    const newTask = await Task.create({
+      title,
+      description,
+      status: status || "todo",
+      startDate,
+      endDate,
+      completedAt,
+      assignedTo,
+    });
+
+    return res.status(201).json({
+      message: "Task created",
+      task: newTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error creating task" });
+  }
+});
+
+// API route - GET /tasks - List all tasks
+app.get("/tasks", async function (req, res) {
+  try {
+    const tasks = await Task.find({}).sort({ createdAt: -1 });
+    return res.json(tasks);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error fetching tasks" });
+  }
+});
+
+// API route - GET /tasks/:id - Get one task by id
+app.get("/tasks/:id", async function (req, res) {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    return res.json(task);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error fetching task" });
+  }
+});
+
+// API route - PUT /tasks/:id - Update one task by id
+app.put("/tasks/:id", async function (req, res) {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    return res.json({
+      message: "Task updated",
+      task: updatedTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error updating task" });
+  }
+});
+
+// API route - DELETE /tasks/:id - Delete one task by id
+app.delete("/tasks/:id", async function (req, res) {
+  try {
+    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+    if (!deletedTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    return res.json({ message: "Task deleted" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error deleting task" });
   }
 });

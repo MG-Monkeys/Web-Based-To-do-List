@@ -33,3 +33,36 @@ Content-Type: application/json
   "email": "mockuser01@example.com",
   "password": "P@ssw0rd123"
 }
+
+@taskId = REPLACE_WITH_TASK_ID
+
+### TASKS - CREATE
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Finish Sprint Writeup",
+  "description": "Complete ASE285 sprint deliverables",
+  "status": "todo",
+  "startDate": "2026-02-18T09:00:00.000Z",
+  "endDate": "2026-02-20T23:59:00.000Z",
+  "assignedTo": "mockuser01"
+}
+
+### TASKS - READ ALL
+GET {{baseUrl}}/tasks
+
+### TASKS - READ ONE (set @taskId first)
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### TASKS - UPDATE (set @taskId first)
+PUT {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "status": "completed",
+  "completedAt": "2026-02-18T18:00:00.000Z"
+}
+
+### TASKS - DELETE (set @taskId first)
+DELETE {{baseUrl}}/tasks/{{taskId}}
