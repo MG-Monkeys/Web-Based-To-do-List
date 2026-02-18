@@ -19,8 +19,8 @@ export default function TaskModal({ isOpen, onClose, onAddTask }) {
   }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <p>New Task</p>
         <form onSubmit={handleSubmit}>
           <label>
