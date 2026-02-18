@@ -14,3 +14,16 @@ Features: 0
 Requirements: 0
 
 ---
+
+# Week 5
+
+## Description
+
+Created functions and endpoints to make posts and tags. There is also a function and endpoint to get posts by a tag.
+
+LOC: 268
+
+Features: 0 
+Requirements: 3
+
+---
