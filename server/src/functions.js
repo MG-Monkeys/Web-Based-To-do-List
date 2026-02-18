@@ -20,7 +20,7 @@ async function getPosts() {
 }
 
 async function getPostsbyTag(tag) {
-    const url = "http://localhost:5500/list";
+    const url = `http://localhost:5500/list/${await getTagId(tag)}`;
     try {
     const response = await fetch(url);
         if (!response.ok) {      
@@ -46,6 +46,16 @@ async function getTags() {
     }
     catch (error) {
         console.error("Error fecthing posts:", error)
+    }
+}
+
+async function getTagId(name) {
+    const tagInDb = await Tag.find({ tagName: name });
+    if(tagInDb.length > 0) {
+        return tagInDb[0]._id;
+    }
+    else {
+        console.log("Tag is not in database");
     }
 }
 
