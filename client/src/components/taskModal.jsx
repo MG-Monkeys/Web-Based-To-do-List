@@ -8,6 +8,7 @@ export default function TaskModal({ isOpen, onClose, onAddTask }) {
     const formData = new FormData(e.target);
     const formJson = Object.fromEntries(formData.entries());
     const newTask = {
+      id: crypto.randomUUID(),
       title: formJson.title,
       start: formJson.date + "T" + formJson.startTime,
       end: formJson.date + "T" + formJson.endTime,

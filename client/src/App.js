@@ -15,6 +15,10 @@ function App() {
     setTasks([...tasks, newTask]);
   };
 
+  const removeTask = (taskId) => {
+    setTasks(tasks.filter((task) => task.id !== taskId));
+  };
+
   const openTaskModal = () => {
     setIsTaskModalOpen(true);
   };
@@ -36,10 +40,10 @@ function App() {
             New Task
           </button>
           <p>This Week:</p>
-          <TaskList tasks={tasks} />
+          <TaskList tasks={tasks} onRemoveTask={removeTask} />
         </div>
         <div className="main-content">
-          <Calendar tasks={tasks} />
+          <Calendar tasks={tasks} onRemoveTask={removeTask} />
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}

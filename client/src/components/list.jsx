@@ -1,17 +1,17 @@
 import FullCalendar from "@fullcalendar/react";
 import listPlugin from "@fullcalendar/list";
 
-function handleEventClick(clickInfo) {
-  if (
-    window.confirm(
-      `Are you sure you want to delete the event '${clickInfo.event.title}'`,
-    )
-  ) {
-    clickInfo.event.remove();
+export default function TaskList({ tasks, onRemoveTask }) {
+  function handleEventClick(clickInfo) {
+    if (
+      window.confirm(
+        `Are you sure you want to delete the event '${clickInfo.event.title}'`,
+      )
+    ) {
+      onRemoveTask(clickInfo.event.id);
+    }
   }
-}
 
-export default function TaskList({ tasks }) {
   return (
     <FullCalendar
       headerToolbar={""}
