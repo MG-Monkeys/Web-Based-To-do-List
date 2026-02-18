@@ -4,39 +4,48 @@ import NavBar from "./components/navbar";
 import Calendar from "./components/calendar";
 import TaskModal from "./components/taskModal";
 import TaskList from "./components/list";
+import LoginModal from "./components/loginModal";
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const addTask = (newTask) => {
     setTasks([...tasks, newTask]);
   };
 
-  const openModal = () => {
-    setIsModalOpen(true);
+  const openTaskModal = () => {
+    setIsTaskModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closeTaskModal = () => {
+    setIsTaskModalOpen(false);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
   };
 
   return (
     <div className="App">
-      <NavBar />
+      <NavBar onLoginClick={() => setIsLoginModalOpen(true)} />
       <div className="flexbox">
         <div className="sidebar">
-          <button onClick={openModal}>New Task</button>
+          <button onClick={openTaskModal} className="task-button">
+            New Task
+          </button>
           <p>This Week:</p>
           <TaskList tasks={tasks} />
         </div>
         <div className="main-content">
           <Calendar tasks={tasks} />
           <TaskModal
-            isOpen={isModalOpen}
-            onClose={closeModal}
+            isOpen={isTaskModalOpen}
+            onClose={closeTaskModal}
             onAddTask={addTask}
           />
+          <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
         </div>
       </div>
     </div>

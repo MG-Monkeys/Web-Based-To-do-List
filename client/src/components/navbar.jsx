@@ -1,7 +1,13 @@
-export default function NavBar() {
+export default function NavBar({ onLoginClick }) {
   return (
     <nav className="navbar">
-      <p>Monkey See Monkey Do</p>
+      <div className="nav-spacer" />
+      <div className="nav-name">
+        <p>Monkey See Monkey Do</p>
+      </div>
+      <button className="login-button" onClick={onLoginClick}>
+        Log In
+      </button>
     </nav>
   );
 }
