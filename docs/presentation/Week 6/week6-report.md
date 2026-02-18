@@ -24,9 +24,11 @@ INSTRUCTIONS
 
 # Week Goals
 
-- 
+- Front-end customizatiom
+- Tag's creation
+- DB Creation
 
-**Burndown rate:** _6/26_(23%)
+**Burndown rate:** _6/26_(23%) Requirements
 
 ---
 
