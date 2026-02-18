@@ -3,8 +3,12 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import methodOverride from "method-override";
 import Post from "./models/Post.js";
+import Tag from "./models/Tag.js";
+import Time from "./models/Time.js";
 import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
+
+import makePost from "./functions.js";
 
 dotenv.config();
 
@@ -13,6 +17,7 @@ const app = express();
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use("/public", express.static("public"));
+app.use(express.json());
 
 // Connect to MongoDB using Mongoose
 async function connectDB() {
@@ -38,6 +43,7 @@ app.listen(5500, function () {
 // GET / - Show write form
 app.get("/", function (req, res) {
   res.send("API is running");
+  makePost("Test Post", "This is a test post", "test, example", "2024-12-31", "none", false, 0, 0);
 });
 
 // POST /add - Add new post
@@ -45,13 +51,20 @@ app.post("/add", async function (req, res) {
   try {
     const nextId = await getNextId();
 
-    var tags = req.body.tags.split(',').map(tag => tag.trim()) ?? [];
 
     const newPost = new Post({
       _id: nextId,
       title: req.body.title,
-      date: req.body.date,
+      description: req.body.description,
+      tags: req.body.tags,
+      time: req.body.time,
+      reoccurance: req.body.reoccurance,
+      isDone: req.body.isDone,
+      creatorId: req.body.creatorId,
+      groupId: req.body.groupId,
     });
+
+    console.log("New post data: ", newPost);
 
     await newPost.save();
     console.log("Post added successfully");
@@ -62,16 +75,57 @@ app.post("/add", async function (req, res) {
   }
 });
 
+app.post("/addTag", async function (req, res) {
+  try {
+    const nextId = await getNextId();
+
+    const newTag = new Tag({
+      _id: nextId,
+      tagName: req.body.tagName,
+    });
+
+    await newTag.save();
+    console.log("Tag added successfully");
+    res.redirect("/");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error adding tag");
+  }
+});
+
 // GET /list - Show all posts
 app.get("/list", async function (req, res) {
   try {
     const posts = await Post.find({});
-    res.render("list.ejs", { posts: posts });
+    //res.render("list.ejs", { posts: posts });
+    console.log("Post list: ", posts);
   } catch (e) {
     console.error(e);
     res.status(500).send("Error fetching posts");
   }
 });
+
+app.get("/list/:tag", async function (req, res) {
+  try {
+    const posts = await Post.find({ tags: req.params.tag });
+    console.log("Post list: ", posts);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error fetching posts");
+  }
+});
+
+app.get("/tags", async function (req, res) {
+  try {
+    const tags = await Tag.find({});
+    //res.render("list.ejs", { posts: posts });
+    console.log("tag list: ", tags);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error fetching posts");
+  }
+});
+
 
 // DELETE /delete - Delete a post
 app.delete("/delete", async function (req, res) {
@@ -95,7 +149,7 @@ app.get("/detail/:id", async function (req, res) {
 
     if (post) {
       console.log("Detail page - Post found:", { data: post });
-      res.render("detail.ejs", { data: post });
+      //res.render("detail.ejs", { data: post });
     } else {
       console.log("Post not found");
       res.status(404).send("Post not found");
