@@ -1,0 +1,35 @@
+@baseUrl = http://localhost:5500
+
+### Health
+GET {{baseUrl}}/
+
+### CREATE
+POST {{baseUrl}}/add
+Content-Type: application/x-www-form-urlencoded
+
+title=Test Task&date=2026-02-18
+
+### READ (JSON)
+GET {{baseUrl}}/listjson
+
+### UPDATE (replace 1 with an existing id)
+PUT {{baseUrl}}/edit
+Content-Type: application/x-www-form-urlencoded
+
+id=1&title=Updated Task&date=2026-02-19
+
+### DELETE (replace 1 with an existing id)
+DELETE {{baseUrl}}/delete
+Content-Type: application/x-www-form-urlencoded
+
+_id=1
+
+### CREATE USER (mock)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "mockuser01",
+  "email": "mockuser01@example.com",
+  "password": "P@ssw0rd123"
+}

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import methodOverride from "method-override";
 import Post from "./models/Post.js";
+import User from "./models/User.js";
 import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
 
@@ -11,6 +12,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/public", express.static("public"));
 
@@ -149,5 +151,34 @@ app.get("/listjson", async function (req, res) {
   } catch (e) {
     console.error(e);
     res.status(500).send("Error fetching posts");
+  }
+});
+
+// API route - POST /users - Create a user document in Users collection
+app.post("/users", async function (req, res) {
+  try {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: "username, email, and password are required" });
+    }
+
+    const newUser = await User.create({ username, email, password });
+    return res.status(201).json({
+      message: "User created",
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+      },
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ error: "Email already exists" });
+    }
+    console.error(error);
+    return res.status(500).json({ error: "Error creating user" });
   }
 });
