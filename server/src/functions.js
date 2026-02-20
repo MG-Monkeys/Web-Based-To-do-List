@@ -2,38 +2,153 @@ import Tag from './models/Tag.js';
 import Time from './models/Time.js';
 import Post from './models/Post.js';
 
-// Get
+// TASKS
 
-async function getPosts() {
-    const url = "http://localhost:5500/list";
+// GET // Tasks = get all tasks
+async function getTasks() {
+    const url = "http://localhost:5500/tasks";
     try {
     const response = await fetch(url);
         if (!response.ok) {      
             throw new Error(`Response status: ${response.status}`);
         }
-    let data = await response.json();
-    console.log(data);
+    return await response.json();
     }
     catch (error) {
-        console.error("Error fecthing posts:", error)
+        console.error("Error fetching tasks:", error)
     }
 }
 
-async function getPostsbyTag(tag) {
-    const url = `http://localhost:5500/list/${await getTagId(tag)}`;
+// GET // Tasks - get tasks by a specific tag
+async function getTasksbyTag(tag) {
+    const url = `http://localhost:5500/tasks/tag//${await getTagId(tag)}`;
     try {
     const response = await fetch(url);
         if (!response.ok) {      
             throw new Error(`Response status: ${response.status}`);
         }
-    let data = await response.json();
-    console.log(data);
+    return await response.json();
     }
     catch (error) {
-        console.error("Error fecthing posts:", error)
+        console.error("Error fetching tasks by tag:", error)
     }
 }
 
+// POST / Tasks - creates tasks
+async function makeTask(data) {
+    const {title, description, tags, due, creatorId, groupId} = data;
+    const newTime = new Date();
+    const tagArr = tags.split(',').map(tag => tag.trim()) ?? [];
+    let newTagArr = [];
+    for (let i = 0; i < tagArr.length; i++) {
+        newTagArr.push(await makeTag(tagArr[i]));
+    };
+    try {
+        const response = await fetch("http://localhost:5500/tasks", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            
+            body: JSON.stringify({ 
+                title: title,
+                description: description,
+                tags: newTagArr, 
+                startDate: newTime,
+                endDate: due,
+                editedAt: newTime,
+                completedAt: null,
+                assignedTo: creatorId, 
+                groupId: groupId, 
+             }),
+        });
+        if (!response.ok) {      
+            throw new Error(`Response status: ${response.status}`);
+        }
+    }
+    catch (error){
+        console.error("Error creating task: ", error);
+    }
+
+}
+
+// UPDATE / Tasks - updates tasks
+async function updateTask(id, data) {
+    const {title, description, tags, status, due, editedAt, completedAt, groupId} = data;
+    const newTime = new Date();
+    const tagArr = tags.split(',').map(tag => tag.trim()) ?? [];
+    let newTagArr = [];
+    for (let i = 0; i < tagArr.length; i++) {
+        newTagArr.push(await makeTag(tagArr[i]));
+    };
+    try {
+        const response = await fetch(`http://localhost:5500/tasks/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            
+            body: JSON.stringify({ 
+                title: title,
+                description: description,
+                tags: newTagArr, 
+                status: status,
+                endDate: due,
+                editedAt: editedAt,
+                completedAt: completedAt,
+                groupId: groupId, 
+             }),
+        });
+        if (!response.ok) {      
+            throw new Error(`Response status: ${response.status}`);
+        }
+    }
+    catch (error){
+        console.error("Error editing task: ", error);
+    }
+
+}
+
+// DELETE / tasks
+async function deleteTask(id) {
+    try {
+        const response = await fetch(`http://localhost:5500/tasks/${id}`);
+        if (!response.ok) {      
+            throw new Error(`Response status: ${response.status}`);
+        }
+    }
+    catch (error){
+        console.error("Error deleting task: ", error);
+    }
+}
+
+// DELETE // POSTS
+// This function is not for production use. When I testing makePost(), it created a lot of posts so I made this function to get rid 
+// of the tests quickly.
+// async function deletePostbyTitle(title) {
+//     try {
+//         const response = await fetch("http://localhost:5500/delete/title", {
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json",
+//             },
+            
+//             body: JSON.stringify({ 
+//                 title: title
+//              }),
+//         });
+//     }
+//     catch (error){
+//         console.error("Error deleting post: ", error);
+//     }
+// }
+// export default deletePostbyTitle;
+
+
+
+// TAGS
+
+// GET // TAGS - get all tags
 async function getTags() {
     const url = "http://localhost:5500/tags";
     try {
@@ -49,6 +164,7 @@ async function getTags() {
     }
 }
 
+// GET // TAGS - get a tag by its id
 async function getTagId(name) {
     const tagInDb = await Tag.find({ tagName: name });
     if(tagInDb.length > 0) {
@@ -59,66 +175,16 @@ async function getTagId(name) {
     }
 }
 
-// Post
-
-async function makePost(title, description, tags, due, reoccurance, isDone, creatorId, groupId) {
-    const newTime = await makePostTime(due);
-    const tagArr = tags.split(',').map(tag => tag.trim()) ?? [];
-    let newTagArr = [];
-    for (let i = 0; i < tagArr.length; i++) {
-        newTagArr.push(await makeTag(tagArr[i]));
-    };
-console.log(newTagArr);
-    try {
-        const response = await fetch("http://localhost:5500/add", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            
-            body: JSON.stringify({ 
-                title: title,
-                description: description,
-                tags: await newTagArr,
-                time: newTime,
-                reoccurance: reoccurance,
-                isDone: isDone,
-                creatorId: creatorId,
-                groupId: groupId
-             }),
-        });
-    }
-    catch (error){
-        console.error("Error creating post: ", error);
-    }
-
-}
-
-export default makePost;
-
-async function makePostTime(due) {
-    let now = await new Date();
-
-    const time = new Time({
-        createdAt: now,
-        editedAt: now,
-        dueDate: due,
-        completedAt: now
-    });
-
-    return time;
-}
-
+// Post // TAGS - make a tag
 async function makeTag(name) {
 
     const tagInDb = await Tag.find({ tagName: name });
     if(tagInDb.length > 0) {
-        console.log("Tag is already in database");
         return tagInDb[0]._id;
     }
     else {
         try {
-            const response = await fetch("http://localhost:5500/addTag", {
+            const response = await fetch("http://localhost:5500/tags", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
