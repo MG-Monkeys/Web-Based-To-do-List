@@ -5,14 +5,16 @@ import methodOverride from "method-override";
 import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
+import User from "./models/User.js";
 import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
-
-import deletePostbyTitle from "./functions.js"; "./functions.js";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
 const app = express();
+const ai = new GoogleGenAI({});
+const model = "gemini-2.5-flash"
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -43,11 +45,6 @@ app.listen(5500, function () {
 // GET / - 
 app.get("/", function (req, res) {
   res.send("API is running");
-
-  //TESTING FUNCTIONS
-  //makePost("Test Post", "This is a test post", "test, example", "2024-12-31", "none", false, 0, 0);
-  //deletePostbyTitle("TEST");
-
 });
 
 // TASKS
@@ -56,8 +53,10 @@ app.get("/", function (req, res) {
 app.get("/tasks", async function (req, res) {
   try {
     const tasks = await Task.find({});
-    //res.render("list.ejs", { posts: posts });
-    console.log("Task list: ", tasks);
+    if(!tasks || tasks.length === 0) {
+      return res.status(404).json({ error: "Tasks not found" });
+    }
+    return res.json(tasks);
   } catch (e) {
     console.error(e);
     res.status(500).send("Error fetching tasks");
@@ -113,7 +112,7 @@ app.post("/tasks", async function (req, res) {
       editedAt: startDate,
       completedAt: null,
       assignedTo, 
-      groupId: groupId ?? "", 
+      groupId: groupId ?? "0", 
     });
 
     return res.status(201).json({
@@ -190,7 +189,7 @@ app.get("/tags", async function (req, res) {
   }
 });
 
-// GET /tags - get tag by id
+// GET /tags/:id - get tag by id
 app.get("/tags/:id", async function (req, res) {
   try {
     const tag = await Tag.findById(req.params.id);
@@ -205,26 +204,28 @@ app.get("/tags/:id", async function (req, res) {
   }
 });
 
-// POST /addTag - Add new tag
+// POST /tags - Add new tag
 app.post("/tags", async function (req, res) {
   try {
-    const nextId = await getNextId();
+    // Check if tag already exists
 
     const newTag = new Tag({
-      _id: nextId,
       tagName: req.body.tagName,
     });
 
     await newTag.save();
-    console.log("Tag added successfully");
-    res.redirect("/");
+    return res.status(201).json({
+      message: "Tag created",
+      id: newTag._id,
+      tag: newTag,
+    });
   } catch (e) {
     console.error(e);
     res.status(500).send("Error adding tag");
   }
 });
 
-// DELETE /delete - Delete a tag
+// DELETE /tags/:id - Delete a tag
 app.delete("/tags/:id", async function (req, res) {
   try {
     const deletedTag = await Tag.findByIdAndDelete(req.params.id);
@@ -315,6 +316,24 @@ app.delete("/users/:id", async function (req, res) {
   } catch (e) {
     console.error(e);
     res.status(500).send("Error deleting User");
+  }
+});
+
+// AI
+
+// POST /ai - test ai response to make tags
+app.post("/ai", async function (req, res) {
+  try {
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: "Respond only with 1-3, comma separated, 1 word tags for a task with this title and description: " + req.body.title + " " + req.body.description
+    });
+    const tags = response.text.split(",").map(tag => tag.trim());
+    return res.json({ response: response.text, tags: tags });
+  }
+  catch (e) {
+    console.error(e);
+    res.status(500).send("Error getting AI response");
   }
 });
 
