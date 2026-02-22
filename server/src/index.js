@@ -208,15 +208,15 @@ app.get("/tags/:id", async function (req, res) {
 app.post("/tags", async function (req, res) {
   try {
     // Check if tag already exists
+    const tag = await Tag.find({tagName: req.body.tagName});
+    if (tag && tag.length > 0) {
+      return res.json({ message: "Tag already exists", tag: tag[0] });
+    }
 
-    const newTag = new Tag({
-      tagName: req.body.tagName,
-    });
-
-    await newTag.save();
+    // create the tag otherwise
+    const newTag = await Tag.create({tagName: req.body.tagName});
     return res.status(201).json({
       message: "Tag created",
-      id: newTag._id,
       tag: newTag,
     });
   } catch (e) {
