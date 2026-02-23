@@ -17,9 +17,9 @@ function App() {
     primary: "#fefeff",
     secondary: "#dedefe",
     tertiary: "#acacfc",
-    primaryText: "#fefeff",
-    secondaryText: "#dedefe",
-    tertiaryText: "#acacfc",
+    primaryText: "#0000000",
+    secondaryText: "#0000000",
+    tertiaryText: "#0000000",
   });
 
   const handleColorChange = (key, value) => {
@@ -58,25 +58,39 @@ function App() {
         Colors={colors}
       />
       <div className="flexbox">
-        <div className="sidebar" style={{ backgroundColor: colors.secondary }}>
+        <div
+          className="sidebar"
+          style={{
+            backgroundColor: colors.secondary,
+            color: colors.secondaryText,
+          }}
+        >
           <button
             onClick={openTaskModal}
             className="task-button"
-            style={{ backgroundColor: colors.tertiary }}
+            style={{
+              backgroundColor: colors.tertiary,
+              color: colors.tertiaryText,
+            }}
           >
             New Task
           </button>
           <p>This Week:</p>
           <TaskList tasks={tasks} onRemoveTask={removeTask} />
         </div>
-        <div className="main-content">
+        <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar tasks={tasks} onRemoveTask={removeTask} />
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}
             onAddTask={addTask}
+            Colors={colors}
           />
-          <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={closeLoginModal}
+            Colors={colors}
+          />
           <ColorModal
             isOpen={isColorModalOpen}
             onClose={closeColorModal}

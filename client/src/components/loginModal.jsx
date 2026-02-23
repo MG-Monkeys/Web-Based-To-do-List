@@ -1,4 +1,4 @@
-export default function LoginModal({ isOpen, onClose }) {
+export default function LoginModal({ isOpen, onClose, Colors }) {
   if (!isOpen) return null;
 
   function handleSubmit(e) {
@@ -11,7 +11,11 @@ export default function LoginModal({ isOpen, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
+      >
         <p>Log In</p>
         <form onSubmit={handleSubmit}>
           <label>

@@ -13,7 +13,11 @@ export default function ColorModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: primaryColor, color: primaryText }}
+      >
         <p>Choose Colors:</p>
         <div className="color-div">
           <table>

@@ -1,6 +1,6 @@
 import getFormattedDate from "../utils/getFormattedDate";
 
-export default function TaskModal({ isOpen, onClose, onAddTask }) {
+export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
   if (!isOpen) return null;
 
   function handleSubmit(e) {
@@ -20,8 +20,16 @@ export default function TaskModal({ isOpen, onClose, onAddTask }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{ color: Colors.text }}
+    >
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: Colors.primary }}
+      >
         <p>New Task</p>
         <form onSubmit={handleSubmit}>
           <label>
