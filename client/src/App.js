@@ -14,9 +14,12 @@ function App() {
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
 
   const [colors, setColors] = useState({
-    primary: "#ffffff",
-    secondary: "#dedefd",
+    primary: "#fefeff",
+    secondary: "#dedefe",
     tertiary: "#acacfc",
+    primaryText: "#fefeff",
+    secondaryText: "#dedefe",
+    tertiaryText: "#acacfc",
   });
 
   const handleColorChange = (key, value) => {
@@ -81,6 +84,9 @@ function App() {
             primaryColor={colors.primary}
             secondaryColor={colors.secondary}
             tertiaryColor={colors.tertiary}
+            primaryText={colors.primaryText}
+            secondaryText={colors.secondaryText}
+            tertiaryText={colors.tertiaryText}
           />
         </div>
       </div>

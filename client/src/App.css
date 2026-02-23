@@ -38,6 +38,8 @@
   max-width: 500px;
   width: 90%;
   justify-content: center;
+  display: flex;
+  flex-direction: column;
 }
 
 .flexbox {
@@ -74,11 +76,6 @@
 
 body {
   background-color: #fefeff;
-}
-
-td {
-  padding: 5px;
-  text-align: left;
 }
 
 .modal-content form {
@@ -134,4 +131,12 @@ label {
   border-radius: 100px;
   border: none;
   background-color: #acacfc;
+}
+
+td {
+  padding: 0.5vh;
+}
+
+.color-div {
+  margin: auto;
 }
