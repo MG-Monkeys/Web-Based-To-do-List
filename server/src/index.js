@@ -9,12 +9,14 @@ import User from "./models/User.js";
 import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
+import { Filter } from 'bad-words'
 
 dotenv.config();
 
 const app = express();
 const ai = new GoogleGenAI({});
 const model = "gemini-2.5-flash"
+const filter = new Filter();
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -100,6 +102,12 @@ app.post("/tasks", async function (req, res) {
     if (!title || !startDate || !endDate || !assignedTo) {
       return res.status(400).json({
         error: "title, startDate, endDate, and assignedTo are required",
+      });
+    }
+
+    if(filter.isProfane(title) || filter.isProfane(description)) {
+      return res.status(400).json({
+        error: "Profanity detected in title or description",
       });
     }
 
@@ -211,6 +219,12 @@ app.post("/tags", async function (req, res) {
     const tag = await Tag.find({tagName: req.body.tagName});
     if (tag && tag.length > 0) {
       return res.json({ message: "Tag already exists", tag: tag[0] });
+    }
+
+    if(filter.isProfane(req.body.tagName)) {
+      return res.status(400).json({
+        error: "Profanity detected in tag name",
+      });
     }
 
     // create the tag otherwise
