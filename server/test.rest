@@ -1,0 +1,102 @@
+@baseUrl = http://localhost:5500
+
+@taskId = 699818b1a323b6ed9680dc6d
+@tagId = 699b6c5d59f4113005bd0095
+
+### Health
+GET {{baseUrl}}/
+
+_id=1
+
+### GET USER
+GET {{baseUrl}}/users/68c32b2cc32bc1b53e98db6f
+
+### CREATE USER (mock)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "mockuser01",
+  "email": "mockuser01@example.com",
+  "password": "P@ssw0rd123"
+}
+
+### TASKS - CREATE
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Finish Sprint Writeup",
+  "description": "Complete ASE285 sprint deliverables",
+  "status": "todo",
+  "startDate": "2026-02-18T09:00:00.000Z",
+  "endDate": "2026-02-20T23:59:00.000Z",
+  "assignedTo": "mockuser01"
+}
+
+### TASKS - READ ALL
+GET {{baseUrl}}/tasks
+
+### TASKS - READ ONE (set @taskId first)
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### TASKS - READ ONE (set @taskId first)
+GET {{baseUrl}}/tasks/699818b1a323b6ed9680dc6d
+
+### TASKS - CREATE TAsK
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "REST TEST",
+  "description": "TESTING REST",
+  "startDate": "2026-02-18T09:00:00.000Z",
+  "endDate": "2026-02-20T23:59:00.000Z",
+  "assignedTo": "000",
+  "groupId": "0"
+}
+
+### TASKS - UPDATE (set @taskId first)
+PUT {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "status": "completed",
+  "completedAt": "2026-02-18T18:00:00.000Z"
+}
+
+### TASKS - DELETE (set @taskId first)
+DELETE {{baseUrl}}/tasks/{{taskId}}
+
+
+### TAGS - READ ALL
+GET {{baseUrl}}/tags
+
+### TAGS - GET BY ID
+GET {{baseUrl}}/tags/{{tagId}}
+
+### TAGS - CREATE
+POST {{baseUrl}}/tags
+Content-Type: application/json
+
+{
+  "tagName": "REST1"
+}
+
+### TAGS - CREATE
+POST {{baseUrl}}/tags
+Content-Type: application/json
+
+{
+  "tagName": "Shit"
+}
+
+
+### AI - TEST
+POST {{baseUrl}}/ai
+Content-Type: application/json
+
+{
+  "title": "Do Homework 3",
+  "description": "Complete the report for Homework 3 for ASE285"
+}
