@@ -28,7 +28,7 @@ INSTRUCTIONS
 - Tag verfication
 - DB Creation
 
-**Burndown rate:** _10/26_(38%) Requirements
+**Burndown rate:** _10/26_(38%) Requirements 
 
 ---
 

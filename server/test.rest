@@ -101,3 +101,14 @@ Content-Type: application/json
   "description": "Complete the report for Homework 3 for ASE285"
 }
 
+### EMAIL - TEST
+POST {{baseUrl}}/notif
+Content-Type: application/json
+
+{
+  "email": "dpberzerker107@gmail.com",
+  "subject": "TEST EMAIL",
+  "text": "This is a test email sent from the ASE285 Web-Based To-do List"
+}
+
+
