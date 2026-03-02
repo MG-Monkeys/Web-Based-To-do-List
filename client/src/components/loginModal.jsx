@@ -1,12 +1,56 @@
-export default function LoginModal({ isOpen, onClose, Colors }) {
+import { useState } from "react";
+
+export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
+  const [mode, setMode] = useState("login");
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen) return null;
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const formJson = Object.fromEntries(formData.entries());
-    console.log(formJson);
-    onClose();
+
+    setStatus({ type: "", message: "" });
+    setIsSubmitting(true);
+
+    const endpoint = mode === "signup" ? "/auth/signup" : "/auth/login";
+    const payload =
+      mode === "signup"
+        ? {
+            username: formJson.username?.trim(),
+            email: formJson.email?.trim(),
+            password: formJson.password,
+          }
+        : {
+            email: formJson.email?.trim(),
+            password: formJson.password,
+          };
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Request failed");
+      }
+
+      setStatus({
+        type: "success",
+        message: mode === "signup" ? "Account created." : "Logged in.",
+      });
+      onAuthSuccess(data.user);
+      onClose();
+    } catch (error) {
+      setStatus({ type: "error", message: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -16,21 +60,67 @@ export default function LoginModal({ isOpen, onClose, Colors }) {
         onClick={(e) => e.stopPropagation()}
         style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
       >
-        <p>Log In</p>
+        <p>{mode === "signup" ? "Sign Up" : "Log In"}</p>
+        <div className="auth-toggle-row">
+          <button
+            type="button"
+            className="modal-button"
+            onClick={() => setMode("login")}
+            disabled={isSubmitting}
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            className="modal-button"
+            onClick={() => setMode("signup")}
+            disabled={isSubmitting}
+          >
+            Sign Up
+          </button>
+        </div>
         <form onSubmit={handleSubmit}>
+          {mode === "signup" ? (
+            <label>
+              Username:
+              <input type="text" placeholder="username" name="username" required />
+            </label>
+          ) : null}
           <label>
             Email:
-            <input type="email" placeholder="example@email.com" name="email" />
+            <input
+              type="email"
+              placeholder="example@email.com"
+              name="email"
+              required
+            />
           </label>
           <label>
             Password:
-            <input type="password" name="password" />
+            <input
+              type="password"
+              name="password"
+              minLength={mode === "signup" ? 8 : undefined}
+              required
+            />
           </label>
+          {status.message ? (
+            <p className={`auth-message ${status.type}`}>{status.message}</p>
+          ) : null}
           <div>
-            <button type="submit" className="modal-button">
-              Log In
+            <button type="submit" className="modal-button" disabled={isSubmitting}>
+              {isSubmitting
+                ? "Please wait..."
+                : mode === "signup"
+                ? "Create Account"
+                : "Log In"}
             </button>
-            <button type="button" className="modal-button" onClick={onClose}>
+            <button
+              type="button"
+              className="modal-button"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </button>
           </div>

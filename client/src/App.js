@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import NavBar from "./components/navbar";
 import Calendar from "./components/calendar";
@@ -9,6 +9,7 @@ import ColorModal from "./components/colorModal";
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [authUser, setAuthUser] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
@@ -26,8 +27,62 @@ function App() {
     setColors((prev) => ({ ...prev, [key]: value }));
   };
 
-  const addTask = (newTask) => {
-    setTasks([...tasks, newTask]);
+  function toCalendarTask(task) {
+    return {
+      id: task._id,
+      title: task.title,
+      start: task.startDate,
+      end: task.endDate,
+      allDay: false,
+      description: task.description,
+    };
+  }
+
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        const response = await fetch("/tasks");
+        if (response.status === 404) {
+          setTasks([]);
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Failed to load tasks");
+        }
+
+        const data = await response.json();
+        setTasks(data.map(toCalendarTask));
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    fetchTasks();
+  }, []);
+
+  const addTask = async (newTask) => {
+    const assignedTo = authUser?.email || "guest@local";
+    const payload = {
+      title: newTask.title,
+      description: newTask.description || "",
+      startDate: newTask.start,
+      endDate: newTask.end,
+      assignedTo,
+      groupId: "0",
+    };
+
+    const response = await fetch("/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Failed to create task");
+    }
+
+    setTasks((prevTasks) => [...prevTasks, toCalendarTask(data.task)]);
   };
 
   const removeTask = (taskId) => {
@@ -54,6 +109,8 @@ function App() {
     <div className="App" style={{ backgroundColor: colors.primary }}>
       <NavBar
         onLoginClick={() => setIsLoginModalOpen(true)}
+        onLogoutClick={() => setAuthUser(null)}
+        authUser={authUser}
         onColorClick={() => setIsColorModalOpen(true)}
         Colors={colors}
       />
@@ -89,6 +146,7 @@ function App() {
           <LoginModal
             isOpen={isLoginModalOpen}
             onClose={closeLoginModal}
+            onAuthSuccess={setAuthUser}
             Colors={colors}
           />
           <ColorModal

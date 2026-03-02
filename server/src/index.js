@@ -9,14 +9,37 @@ import User from "./models/User.js";
 import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
-import { Filter } from 'bad-words'
+import { Filter } from "bad-words";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 dotenv.config();
 
 const app = express();
 const ai = new GoogleGenAI({});
-const model = "gemini-2.5-flash"
+const model = "gemini-2.5-flash";
 const filter = new Filter();
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedPassword) {
+  if (!storedPassword?.includes(":")) {
+    return password === storedPassword;
+  }
+
+  const [salt, key] = storedPassword.split(":");
+  const storedKey = Buffer.from(key, "hex");
+  const derivedKey = scryptSync(password, salt, 64);
+
+  if (storedKey.length !== derivedKey.length) {
+    return false;
+  }
+
+  return timingSafeEqual(storedKey, derivedKey);
+}
 
 // Middleware
 app.use(express.json());
@@ -264,13 +287,85 @@ app.get("/users/:id", async function (req, res) {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    return res.json(user);
+    return res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    });
   }
   catch (error) {
     console.error("Error fetching users: ", error);
     res.status(500).json({ error: "Error fetching users" });
   }
-})
+});
+
+// POST /auth/signup - Create account and store user in MongoDB
+app.post("/auth/signup", async function (req, res) {
+  try {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: "username, email, and password are required" });
+    }
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 8 characters" });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ error: "Email already exists" });
+    }
+
+    const newUser = await User.create({
+      username: username.trim(),
+      email: email.toLowerCase(),
+      password: hashPassword(password),
+    });
+
+    return res.status(201).json({
+      message: "Signup successful",
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error creating user" });
+  }
+});
+
+// POST /auth/login - Verify user credentials
+app.post("/auth/login", async function (req, res) {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "email and password are required" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !verifyPassword(password, user.password)) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    return res.json({
+      message: "Login successful",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error logging in" });
+  }
+});
 
 // POST /users - Add new user
 app.post("/users", async function (req, res) {
@@ -283,7 +378,11 @@ app.post("/users", async function (req, res) {
         .json({ error: "username, email, and password are required" });
     }
 
-    const newUser = await User.create({ username, email, password });
+    const newUser = await User.create({
+      username: username.trim(),
+      email: email.toLowerCase(),
+      password: hashPassword(password),
+    });
     return res.status(201).json({
       message: "User created",
       user: {
@@ -415,7 +514,11 @@ app.post("/users", async function (req, res) {
         .json({ error: "username, email, and password are required" });
     }
 
-    const newUser = await User.create({ username, email, password });
+    const newUser = await User.create({
+      username: username.trim(),
+      email: email.toLowerCase(),
+      password: hashPassword(password),
+    });
     return res.status(201).json({
       message: "User created",
       user: {
