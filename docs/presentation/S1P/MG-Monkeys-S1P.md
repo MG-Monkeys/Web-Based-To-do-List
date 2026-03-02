@@ -71,4 +71,31 @@ INSTRUCTIONS
 
 ---
 
+# Screenshots
+
+![Screenshot](imgs/Screenshot%20(24).png)
+
+---
+# Screenshots
+
+![Screenshot](imgs/Screenshot%20(28).png)
+
+---
+
+# Screenshots
+
+![Screenshot](imgs/Screenshot%20(29).png)
+
+---
+
+# Screenshots
+
+![Screenshot](imgs/Screenshot%20(30).png)
+
+---
+
+![Screenshot](imgs/Screenshot%20(31).png)
+
+---
+
 # Questions?
