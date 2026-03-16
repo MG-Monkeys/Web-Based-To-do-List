@@ -1,6 +1,4 @@
 import mongoose from 'mongoose';
-import Tag from './Tag.js';
-import Time from './Time.js';
 
 const postSchema = new mongoose.Schema({
   _id: {

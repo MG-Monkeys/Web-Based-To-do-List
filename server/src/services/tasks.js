@@ -1,5 +1,3 @@
-import Tag from './models/Tag.js';
-
 // TASKS
 
 // GET // Tasks = get all tasks
@@ -117,85 +115,5 @@ async function deleteTask(id) {
     }
     catch (error){
         console.error("Error deleting task: ", error);
-    }
-}
-
-// DELETE // POSTS
-// This function is not for production use. When I testing makePost(), it created a lot of posts so I made this function to get rid 
-// of the tests quickly.
-// async function deletePostbyTitle(title) {
-//     try {
-//         const response = await fetch("http://localhost:5500/delete/title", {
-//             method: "POST",
-//             headers: {
-//                 "Content-Type": "application/json",
-//             },
-            
-//             body: JSON.stringify({ 
-//                 title: title
-//              }),
-//         });
-//     }
-//     catch (error){
-//         console.error("Error deleting post: ", error);
-//     }
-// }
-// export default deletePostbyTitle;
-
-
-
-// TAGS
-
-// GET // TAGS - get all tags
-async function getTags() {
-    const url = "http://localhost:5500/tags";
-    try {
-    const response = await fetch(url);
-        if (!response.ok) {      
-            throw new Error(`Response status: ${response.status}`);
-        }
-    let data = await response.json();
-    console.log(data);
-    }
-    catch (error) {
-        console.error("Error fecthing posts:", error)
-    }
-}
-
-// GET // TAGS - get a tag by its id
-async function getTagId(name) {
-    const tagInDb = await Tag.find({ tagName: name });
-    if(tagInDb.length > 0) {
-        return tagInDb[0]._id;
-    }
-    else {
-        console.log("Tag is not in database");
-    }
-}
-
-// Post // TAGS - make a tag
-async function makeTag(name) {
-
-    const tagInDb = await Tag.find({ tagName: name });
-    if(tagInDb.length > 0) {
-        return tagInDb[0]._id;
-    }
-    else {
-        try {
-            const response = await fetch("http://localhost:5500/tags", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ 
-                    tagName: name,
-                }),
-            });
-            const tagInDb = await Tag.find({ tagName: name });
-            return tagInDb[0]._id;
-        }
-        catch (error){
-            console.error("Error creating tag: ", error);
-        }
     }
 }

@@ -8,5 +8,14 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "@google/genai": "^1.42.0",
+    "bad-words": "^4.0.0",
+    "dotenv": "^17.3.1",
+    "genai": "^0.0.18",
+    "google": "^2.1.0",
+    "nodemailer": "^8.0.1",
+    "openai": "^6.22.0"
   }
 }
