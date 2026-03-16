@@ -6,11 +6,27 @@ import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
 import User from "./models/User.js";
-import { getNextId } from "./util/util.js";
 import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
+
 import { Filter } from "bad-words";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+      // host: "smtp.ethereal.email",
+      // port: 587,
+      // secure: false, // Use true for port 465, false for port 587
+      // 
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+          user: "monkeyseemonkeydo33333@gmail.com",
+          pass: process.env.MSMD_EMAIL_PASS,
+      },
+});
+
 
 dotenv.config();
 
@@ -449,6 +465,27 @@ app.post("/ai", async function (req, res) {
     console.error(e);
     res.status(500).send("Error getting AI response");
   }
+});
+
+// EMAIL NOTIFICATIONS
+
+// POST /notif - send email notification
+app.post("/notif", async function (req, res) {
+  try {
+    const info = await transporter.sendMail({
+      from: '"MonkeySee MonkeyDo" <monkeyseemonkeydo33333@gmail.com>',
+      to: req.body.email,
+      subject: req.body.subject,
+      text: req.body.text, // Plain-text version of the message
+      html: `<b>${req.body.text}</b>`, // HTML version of the message
+    });
+
+    return res.json({ message: "Email sent", info: await info });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error sending email");
+  }
+
 });
 
 

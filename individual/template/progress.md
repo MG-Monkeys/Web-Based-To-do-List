@@ -27,3 +27,29 @@ Features: 0
 Requirements: 3
 
 ---
+
+# Week 6
+
+## Description
+
+Made CRUD operations for tasks, users, and tags. Text validation for tags to ensure uniqueness and profanity filter for both tags and tasks.
+
+LOC: 353
+
+Features: 2 
+Requirements: 6
+
+---
+
+# Week 7
+
+## Description
+
+Can send email notifications. Moved tag and task functions into separate files
+
+LOC: 35
+
+Features: 2 
+Requirements: 6
+
+---
