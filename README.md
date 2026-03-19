@@ -142,7 +142,8 @@ By signing below, all team members agree to follow these rules:
         - Non-hierarchical approach, users will create to-dos and have a "liking" system that will similar to assignment
 
 7. Repeating to-dos
-    - Use weekly/monthly reminders 
+    - Use Daily/Weekly/Monthly reminders
+    - Users should select beginning/end of week/month to have to-do's do
 
 8. Email notifications (SMS - Maybe)
     - utilize external package Email service to send user reminders 
