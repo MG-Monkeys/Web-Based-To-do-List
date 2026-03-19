@@ -12,9 +12,11 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
       title: formJson.title,
       start: formJson.date + "T" + formJson.startTime,
       end: formJson.date + "T" + formJson.endTime,
-      allDay: formJson.allDay === "true",
+      allDay: formJson.allDay,
+      repeat: formJson.repeat,
       description: formJson.description,
     };
+    console.log(newTask);
     onAddTask(newTask);
     onClose();
   }
@@ -59,6 +61,15 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
           <label>
             All Day?
             <input type="checkbox" name="allDay" />
+          </label>
+          <label>
+            Repeat?
+            <select name="repeat">
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
           </label>
           <label>
             Description:
