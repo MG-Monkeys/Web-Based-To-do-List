@@ -53,3 +53,14 @@ Features: 2
 Requirements: 6
 
 ---
+
+# Week 8
+
+## Description
+
+can get by date and tasks will reoccurr. Created a complete endpoint. Still working on computing if a task is completed based on completedAt dates
+
+LOC: 211
+
+Features: 2
+Requirements: 6
