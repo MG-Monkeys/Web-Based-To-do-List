@@ -30,6 +30,21 @@ async function getTasksbyTag(tag) {
     }
 }
 
+// GET // Tasks - get tasks by date
+async function getTasksbyDate(date) {
+    const url = `http://localhost:5500/tasks/due//${date}`;
+    try {
+    const response = await fetch(url);
+        if (!response.ok) {      
+            throw new Error(`Response status: ${response.status}`);
+        }
+    return await response.json();
+    }
+    catch (error) {
+        console.error("Error fetching tasks by date:", error)
+    }
+}
+
 // POST / Tasks - creates tasks
 async function makeTask(data) {
     const {title, description, tags, due, creatorId, groupId} = data;
@@ -117,3 +132,5 @@ async function deleteTask(id) {
         console.error("Error deleting task: ", error);
     }
 }
+
+export { getTasksbyDate };

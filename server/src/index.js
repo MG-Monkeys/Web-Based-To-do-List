@@ -10,6 +10,7 @@ import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
 import { Filter } from 'bad-words';
 import nodemailer from "nodemailer";
+import { getTasksbyDate } from "./services/tasks.js";
 
 const transporter = nodemailer.createTransport({
       // host: "smtp.ethereal.email",
@@ -63,6 +64,7 @@ app.listen(5500, function () {
 // GET / - 
 app.get("/", function (req, res) {
   res.send("API is running");
+  getTasksbyDate("2026-03-24T23:59:00.000+00:00");
 });
 
 // TASKS
@@ -95,6 +97,78 @@ app.get("/tasks/:id", async function (req, res) {
   }
 });
 
+// GET /tasks/due/:date - Get tasks due on a specific date
+app.get("/tasks/due/:date", async function (req, res) {
+  try {
+    const task = await Task.find({ endDate: req.params.date, reoccurrence: "none" });
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const reoccurentTask = await Task.find({ reoccurrence: { $ne: "none" } });
+    for(const tasks of reoccurentTask) {
+
+
+      if(tasks.reoccurrence === "daily") {
+        let time = req.params.date.split(/[-T]/);
+        if(tasks.completedAt) {
+          for(let comp of tasks.completedAt) {
+            if(comp > new Date(time[0], time[1], time[2], 0, 0, 0) && comp < new Date(time[0], time[1], time[2], 23, 59, 59)) {
+              tasks.status = "completed";
+              break;
+            }
+          }
+        }
+        task.push(tasks);
+      }
+      else if(tasks.reoccurrence === "weekly" && new Date(tasks.endDate).getDay() === new Date(req.params.date).getDay()) {
+        let time = req.params.date.split(/[-T]/);
+        if(tasks.completedAt) {
+          for(let comp of tasks.completedAt) {
+            console.log(comp, ' ', new Date(time[0], time[1], time[2], 0, 0, 0), ' ', new Date(time[0], time[1], time[2], 23, 59, 59));
+            if(comp > new Date(time[0], time[1], time[2]-7, 0, 0, 0) && comp < new Date(time[0], time[1], time[2], 23, 59, 59)) {
+              tasks.status = "completed";
+              break;
+            }
+          }
+        }
+        task.push(tasks);
+      }
+      else if(tasks.reoccurrence === "monthly" && tasks.endDate.toISOString().split(/[-T]/)[2] === req.params.date.split(/[-T]/)[2]) {
+        let time = req.params.date.split(/[-T]/);
+        if(tasks.completedAt) {
+          for(let comp of tasks.completedAt) {
+            console.log(comp, ' ', new Date(time[0], time[1], 1, 1, 0, 0), ' ', new Date(time[0], time[1], 0, 23, 59, 59));
+            if(comp > new Date(time[0], time[1]-1, 1, 1, 0, 0) && comp < new Date(time[0], time[1], 0, 23, 59, 59)) {
+              tasks.status = "completed";
+              break;
+            }
+          }
+        }
+        task.push(tasks);
+      }
+      else if(tasks.reoccurrence === "yearly" && tasks.endDate.toISOString().split(/[-T]/)[1] === req.params.date.split(/[-T]/)[1]
+      && tasks.endDate.toISOString().split(/[-T]/)[2] === req.params.date.split(/[-T]/)[2]) {
+        let time = req.params.date.split(/[-T]/);
+        if(tasks.completedAt) {
+          for(let comp of tasks.completedAt) {
+            if(comp > new Date(time[0], 0, 0, 0, 0, 0) && comp < new Date(time[0], 12, 31, 23, 59, 59)) {
+              tasks.status = "completed";
+              break;
+            }
+          }
+        }
+        task.push(tasks);
+      }
+    }
+
+    return res.json(task);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error fetching task" });
+  }
+});
+
 // GET /tasks/tag/:tag - get posts with "tag"
 app.get("/tasks/tag/:tag", async function (req, res) {
   try {
@@ -112,7 +186,7 @@ app.get("/tasks/tag/:tag", async function (req, res) {
 // POST /tasks - Add new task
 app.post("/tasks", async function (req, res) {
   try {
-    const { title, description, tags, startDate, endDate, assignedTo, groupId } =
+    const { title, description, tags, startDate, endDate, reoccurrence, assignedTo, groupId } =
       req.body;
 
     if (!title || !startDate || !endDate || !assignedTo) {
@@ -135,6 +209,7 @@ app.post("/tasks", async function (req, res) {
       endDate,
       editedAt: startDate,
       completedAt: null,
+      reoccurrence: reoccurrence ?? "none",
       assignedTo, 
       groupId: groupId ?? "0", 
     });
@@ -164,6 +239,41 @@ app.put("/tasks/:id", async function (req, res) {
   } catch (e) {
     console.error(e);
     res.status(500).send("Error updating task");
+  }
+});
+
+// UPDATE /tasks/:id - Update a task to completed and set completedAt
+app.put("/tasks/completed/:id", async function (req, res) {
+  try {
+    const updatedTask = await Task.findById(req.params.id);
+
+    if (!updatedTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    let update = {};
+
+    if(updatedTask.reoccurrence == "none") {
+      update = {$set: {completedAt: new Date(), status: "completed"}};
+    }
+    else {
+      let dates = updatedTask.completedAt ? updatedTask.completedAt : [];
+      dates.push(new Date());
+      update = {$set: {completedAt: dates}};
+    }
+
+    await updatedTask.updateOne(update, {
+      new: true,
+      runValidators: true,
+    });
+
+
+    return res.json({
+      message: "Task updated",
+      task: updatedTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error updating task" });
   }
 });
 
@@ -387,6 +497,8 @@ app.post("/notif", async function (req, res) {
   }
 
 });
+
+
 
 
 

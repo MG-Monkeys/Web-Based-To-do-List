@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:5500
 
-@taskId = 699818b1a323b6ed9680dc6d
+@taskId = 69c0df026621bf016ce5a8d4
 @tagId = 699b6c5d59f4113005bd0095
 
 ### Health
@@ -26,11 +26,12 @@ POST {{baseUrl}}/tasks
 Content-Type: application/json
 
 {
-  "title": "Finish Sprint Writeup",
-  "description": "Complete ASE285 sprint deliverables",
+  "title": "Test Month Status",
+  "description": "Reoccurrence test",
   "status": "todo",
-  "startDate": "2026-02-18T09:00:00.000Z",
-  "endDate": "2026-02-20T23:59:00.000Z",
+  "startDate": "2026-03-22T09:00:00.000Z",
+  "endDate": "2026-03-25T23:59:00.000Z",
+  "reoccurrence": "monthly",
   "assignedTo": "mockuser01"
 }
 
@@ -39,6 +40,9 @@ GET {{baseUrl}}/tasks
 
 ### TASKS - READ ONE (set @taskId first)
 GET {{baseUrl}}/tasks/{{taskId}}
+
+### TASKS - READ BY DATE (set @date first)
+GET {{baseUrl}}/tasks/due/2026-03-23T23:59:00.000+00:00
 
 ### TASKS - READ ONE (set @taskId first)
 GET {{baseUrl}}/tasks/699818b1a323b6ed9680dc6d
@@ -63,6 +67,13 @@ Content-Type: application/json
 {
   "status": "completed",
   "completedAt": "2026-02-18T18:00:00.000Z"
+}
+
+### TASKS - Complete (set @taskId first)
+PUT {{baseUrl}}/tasks/completed/{{taskId}}
+Content-Type: application/json
+
+{
 }
 
 ### TASKS - DELETE (set @taskId first)
