@@ -58,9 +58,9 @@ Requirements: 6
 
 ## Description
 
-can get by date and tasks will reoccurr. Created a complete endpoint. Still working on computing if a task is completed based on completedAt dates
+can get by date and tasks will reoccurr. Created a complete endpoint. Can get completion status via completedAgt computations
 
-LOC: 211
+LOC: 225
 
 Features: 2
-Requirements: 6
+Requirements: 1
