@@ -18,12 +18,21 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
     const isAllDay = formJson.allDay === "on";
     const start = isAllDay ? `${date}T00:00` : `${date}T${startTime}`;
     const end = isAllDay ? `${date}T23:59` : `${date}T${endTime}`;
+    const recurrenceFrequency = formJson.recurrenceFrequency || "none";
+    const selectedDate = new Date(`${date}T12:00:00`);
     const newTask = {
       title: formJson.title,
       start,
       end,
       allDay: isAllDay,
       description: formJson.description,
+      recurrenceRule: {
+        frequency: recurrenceFrequency,
+        interval: Number.parseInt(formJson.recurrenceInterval || "1", 10),
+        daysOfWeek: recurrenceFrequency === "weekly" ? [selectedDate.getDay()] : [],
+        dayOfMonth: recurrenceFrequency === "monthly" ? selectedDate.getDate() : null,
+        until: formJson.recurrenceUntil || null,
+      },
     };
 
     setError("");
@@ -82,6 +91,27 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
           <label>
             Description:
             <textarea rows="4" cols="30" name="description" />
+          </label>
+          <label>
+            Repeats:
+            <select name="recurrenceFrequency" defaultValue="none">
+              <option value="none">Does not repeat</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+          <label>
+            Repeat Every:
+            <input
+              type="number"
+              name="recurrenceInterval"
+              min="1"
+              defaultValue="1"
+            />
+          </label>
+          <label>
+            Repeat Until:
+            <input type="date" name="recurrenceUntil" />
           </label>
           {error ? <p className="auth-message error">{error}</p> : null}
           <div>

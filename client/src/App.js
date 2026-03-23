@@ -35,6 +35,8 @@ function App() {
       end: task.endDate,
       allDay: false,
       description: task.description,
+      recurrenceRule: task.recurrenceRule,
+      completionDates: task.completionDates ?? [],
     };
   }
 
@@ -67,6 +69,8 @@ function App() {
       description: newTask.description || "",
       startDate: newTask.start,
       endDate: newTask.end,
+      recurrenceRule: newTask.recurrenceRule,
+      completionDates: [],
       assignedTo,
       groupId: "0",
     };

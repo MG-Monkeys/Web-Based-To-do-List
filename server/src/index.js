@@ -6,12 +6,36 @@ import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
 import User from "./models/User.js";
-import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
 
 import { Filter } from "bad-words";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
+
+dotenv.config();
+
+function getMongoUri() {
+  if (process.env.MONGODB_URI || process.env.MONGO_URI) {
+    return process.env.MONGODB_URI || process.env.MONGO_URI;
+  }
+
+  const {
+    MONGO_USER,
+    MONGO_PASSWORD,
+    MONGO_CLUSTER,
+    MONGO_DATABASE,
+  } = process.env;
+
+  if (MONGO_USER && MONGO_PASSWORD && MONGO_CLUSTER && MONGO_DATABASE) {
+    const user = encodeURIComponent(MONGO_USER);
+    const password = encodeURIComponent(MONGO_PASSWORD);
+    return `mongodb+srv://${user}:${password}@${MONGO_CLUSTER}.mongodb.net/${MONGO_DATABASE}?retryWrites=true&w=majority`;
+  }
+
+  return null;
+}
+
+const mongoUri = getMongoUri();
 
 const transporter = nodemailer.createTransport({
       // host: "smtp.ethereal.email",
@@ -27,13 +51,107 @@ const transporter = nodemailer.createTransport({
       },
 });
 
-
-dotenv.config();
-
 const app = express();
 const ai = new GoogleGenAI({});
 const model = "gemini-2.5-flash";
 const filter = new Filter();
+
+function normalizeCompletionDates(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .sort((left, right) => left.getTime() - right.getTime());
+}
+
+function normalizeRecurrenceRule(input) {
+  const frequency = input?.frequency ?? "none";
+
+  if (!["none", "daily", "weekly", "monthly"].includes(frequency)) {
+    throw new Error("Invalid recurrence frequency");
+  }
+
+  const interval = Number.parseInt(input?.interval ?? 1, 10);
+  if (Number.isNaN(interval) || interval < 1) {
+    throw new Error("Recurrence interval must be a positive integer");
+  }
+
+  const daysOfWeek = Array.isArray(input?.daysOfWeek)
+    ? input.daysOfWeek
+        .map((value) => Number.parseInt(value, 10))
+        .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)
+    : [];
+
+  const rawDayOfMonth = input?.dayOfMonth;
+  const dayOfMonth =
+    rawDayOfMonth === null || rawDayOfMonth === undefined || rawDayOfMonth === ""
+      ? null
+      : Number.parseInt(rawDayOfMonth, 10);
+
+  if (dayOfMonth !== null && (Number.isNaN(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31)) {
+    throw new Error("dayOfMonth must be between 1 and 31");
+  }
+
+  const rawUntil = input?.until;
+  const until =
+    rawUntil === null || rawUntil === undefined || rawUntil === "" ? null : new Date(rawUntil);
+
+  if (until && Number.isNaN(until.getTime())) {
+    throw new Error("Invalid recurrence end date");
+  }
+
+  return {
+    frequency,
+    interval,
+    daysOfWeek: frequency === "weekly" ? daysOfWeek : [],
+    dayOfMonth: frequency === "monthly" ? dayOfMonth : null,
+    until,
+  };
+}
+
+function buildTaskPayload(body) {
+  const completionDates = normalizeCompletionDates(body.completionDates);
+  const recurrenceRule = normalizeRecurrenceRule(body.recurrenceRule);
+  const rawCompletedAt = body.completedAt;
+  const completedAt =
+    rawCompletedAt === null || rawCompletedAt === undefined || rawCompletedAt === ""
+      ? completionDates[completionDates.length - 1] ?? null
+      : new Date(rawCompletedAt);
+
+  if (completedAt && Number.isNaN(completedAt.getTime())) {
+    throw new Error("Invalid completion date");
+  }
+
+  return {
+    title: body.title,
+    description: body.description ?? "",
+    tags: body.tags,
+    status: body.status || "todo",
+    startDate: body.startDate,
+    endDate: body.endDate,
+    editedAt: body.editedAt ?? new Date(),
+    completedAt,
+    completionDates,
+    recurrenceRule,
+    assignedTo: body.assignedTo,
+    groupId: body.groupId ?? "0",
+  };
+}
+
+function hasRecurrence(task) {
+  return task?.recurrenceRule?.frequency && task.recurrenceRule.frequency !== "none";
+}
+
+function hasCompletionDate(task, completedOn) {
+  const completedTime = completedOn.getTime();
+  return (task.completionDates ?? []).some(
+    (entry) => new Date(entry).getTime() === completedTime
+  );
+}
 
 function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
@@ -66,7 +184,11 @@ app.use(express.json());
 // Connect to MongoDB using Mongoose
 async function connectDB() {
   try {
-    await mongoose.connect(uri);
+    if (!mongoUri) {
+      throw new Error("Missing MONGODB_URI or MONGO_URI in the server environment");
+    }
+
+    await mongoose.connect(mongoUri);
     console.log("MongoDB connected successfully");
   } catch (e) {
     console.error("MongoDB connection error:", e);
@@ -136,8 +258,7 @@ app.get("/tasks/tag/:tag", async function (req, res) {
 // POST /tasks - Add new task
 app.post("/tasks", async function (req, res) {
   try {
-    const { title, description, tags, startDate, endDate, assignedTo, groupId } =
-      req.body;
+    const { title, description, startDate, endDate, assignedTo } = req.body;
 
     if (!title || !startDate || !endDate || !assignedTo) {
       return res.status(400).json({
@@ -151,17 +272,7 @@ app.post("/tasks", async function (req, res) {
       });
     }
 
-    const newTask = await Task.create({
-      title,
-      description: description ?? "",
-      tags, 
-      startDate,
-      endDate,
-      editedAt: startDate,
-      completedAt: null,
-      assignedTo, 
-      groupId: groupId ?? "0", 
-    });
+    const newTask = await Task.create(buildTaskPayload(req.body));
 
     return res.status(201).json({
       message: "Task created",
@@ -169,17 +280,31 @@ app.post("/tasks", async function (req, res) {
     });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Error adding task");
+    const statusCode =
+      e.message?.startsWith("Invalid") || e.message?.includes("must be") ? 400 : 500;
+    res.status(statusCode).json({ error: e.message || "Error adding task" });
   }
 });
 
 // UPDATE /tasks/:id - Update a task
 app.put("/tasks/:id", async function (req, res) {
   try {
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
-    if(!updatedTask) {
+    const existingTask = await Task.findById(req.params.id);
+    if (!existingTask) {
       return res.status(404).json({ error: "Task not found" });
     }
+
+    const nextBody = {
+      ...existingTask.toObject(),
+      ...req.body,
+      recurrenceRule: req.body.recurrenceRule ?? existingTask.recurrenceRule,
+      completionDates: req.body.completionDates ?? existingTask.completionDates,
+    };
+
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, buildTaskPayload(nextBody), {
+      new: true,
+      runValidators: true,
+    });
 
     return res.json({
       message: "Task updated",
@@ -187,7 +312,45 @@ app.put("/tasks/:id", async function (req, res) {
     });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Error updating task");
+    const statusCode =
+      e.message?.startsWith("Invalid") || e.message?.includes("must be") ? 400 : 500;
+    res.status(statusCode).json({ error: e.message || "Error updating task" });
+  }
+});
+
+app.post("/tasks/:id/complete", async function (req, res) {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const completedOn = req.body?.completedOn ? new Date(req.body.completedOn) : new Date();
+    if (Number.isNaN(completedOn.getTime())) {
+      return res.status(400).json({ error: "Invalid completion date" });
+    }
+
+    if (!hasCompletionDate(task, completedOn)) {
+      task.completionDates.push(completedOn);
+      task.completionDates.sort((left, right) => left.getTime() - right.getTime());
+    }
+
+    task.completedAt = completedOn;
+    task.editedAt = new Date();
+
+    if (!hasRecurrence(task)) {
+      task.status = "completed";
+    }
+
+    await task.save();
+
+    return res.json({
+      message: "Task completion recorded",
+      task,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Error recording task completion" });
   }
 });
 
@@ -576,8 +739,7 @@ app.post("/users", async function (req, res) {
 // API route - POST /tasks - Create a task in Tasks collection
 app.post("/tasks", async function (req, res) {
   try {
-    const { title, description, status, startDate, endDate, completedAt, assignedTo } =
-      req.body;
+    const { title, description, startDate, assignedTo } = req.body;
 
     if (!title || !description || !startDate || !assignedTo) {
       return res.status(400).json({
@@ -585,15 +747,7 @@ app.post("/tasks", async function (req, res) {
       });
     }
 
-    const newTask = await Task.create({
-      title,
-      description,
-      status: status || "todo",
-      startDate,
-      endDate,
-      completedAt,
-      assignedTo,
-    });
+    const newTask = await Task.create(buildTaskPayload(req.body));
 
     return res.status(201).json({
       message: "Task created",
@@ -601,7 +755,9 @@ app.post("/tasks", async function (req, res) {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Error creating task" });
+    const statusCode =
+      error.message?.startsWith("Invalid") || error.message?.includes("must be") ? 400 : 500;
+    return res.status(statusCode).json({ error: error.message || "Error creating task" });
   }
 });
 
@@ -633,14 +789,22 @@ app.get("/tasks/:id", async function (req, res) {
 // API route - PUT /tasks/:id - Update one task by id
 app.put("/tasks/:id", async function (req, res) {
   try {
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
+    const existingTask = await Task.findById(req.params.id);
+    if (!existingTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const nextBody = {
+      ...existingTask.toObject(),
+      ...req.body,
+      recurrenceRule: req.body.recurrenceRule ?? existingTask.recurrenceRule,
+      completionDates: req.body.completionDates ?? existingTask.completionDates,
+    };
+
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, buildTaskPayload(nextBody), {
       new: true,
       runValidators: true,
     });
-
-    if (!updatedTask) {
-      return res.status(404).json({ error: "Task not found" });
-    }
 
     return res.json({
       message: "Task updated",
@@ -648,7 +812,9 @@ app.put("/tasks/:id", async function (req, res) {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Error updating task" });
+    const statusCode =
+      error.message?.startsWith("Invalid") || error.message?.includes("must be") ? 400 : 500;
+    return res.status(statusCode).json({ error: error.message || "Error updating task" });
   }
 });
 

@@ -20,7 +20,8 @@
     "fullcalendar": "^6.1.20",
     "method-override": "^3.0.0",
     "mongodb": "^7.0.0",
-    "mongoose": "^7.0.0"
+    "mongoose": "^7.0.0",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

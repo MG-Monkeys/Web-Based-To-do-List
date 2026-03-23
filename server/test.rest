@@ -31,7 +31,15 @@ Content-Type: application/json
   "status": "todo",
   "startDate": "2026-02-18T09:00:00.000Z",
   "endDate": "2026-02-20T23:59:00.000Z",
-  "assignedTo": "mockuser01"
+  "assignedTo": "mockuser01",
+  "groupId": "0",
+  "recurrenceRule": {
+    "frequency": "weekly",
+    "interval": 1,
+    "daysOfWeek": [3],
+    "until": "2026-06-01T00:00:00.000Z"
+  },
+  "completionDates": []
 }
 
 ### TASKS - READ ALL
@@ -61,8 +69,19 @@ PUT {{baseUrl}}/tasks/{{taskId}}
 Content-Type: application/json
 
 {
-  "status": "completed",
-  "completedAt": "2026-02-18T18:00:00.000Z"
+  "recurrenceRule": {
+    "frequency": "monthly",
+    "interval": 1,
+    "dayOfMonth": 18
+  }
+}
+
+### TASKS - RECORD COMPLETION
+POST {{baseUrl}}/tasks/{{taskId}}/complete
+Content-Type: application/json
+
+{
+  "completedOn": "2026-02-18T18:00:00.000Z"
 }
 
 ### TASKS - DELETE (set @taskId first)
@@ -110,5 +129,4 @@ Content-Type: application/json
   "subject": "TEST EMAIL",
   "text": "This is a test email sent from the ASE285 Web-Based To-do List"
 }
-
 
