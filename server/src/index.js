@@ -106,14 +106,12 @@ app.get("/tasks/due/:date", async function (req, res) {
     }
 
     const reoccurentTask = await Task.find({ reoccurrence: { $ne: "none" } });
+    const time = new Date(req.params.date);
     for(const tasks of reoccurentTask) {
-
-
       if(tasks.reoccurrence === "daily") {
-        let time = req.params.date.split(/[-T]/);
         if(tasks.completedAt) {
           for(let comp of tasks.completedAt) {
-            if(comp > new Date(time[0], time[1], time[2], 0, 0, 0) && comp < new Date(time[0], time[1], time[2], 23, 59, 59)) {
+            if(comp > new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate(), 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate(), 23, 59, 59, 999))) {
               tasks.status = "completed";
               break;
             }
@@ -121,12 +119,10 @@ app.get("/tasks/due/:date", async function (req, res) {
         }
         task.push(tasks);
       }
-      else if(tasks.reoccurrence === "weekly" && new Date(tasks.endDate).getDay() === new Date(req.params.date).getDay()) {
-        let time = req.params.date.split(/[-T]/);
+      else if(tasks.reoccurrence === "weekly" && new Date(tasks.endDate).getDay() === time.getDay()) {
         if(tasks.completedAt) {
           for(let comp of tasks.completedAt) {
-            console.log(comp, ' ', new Date(time[0], time[1], time[2], 0, 0, 0), ' ', new Date(time[0], time[1], time[2], 23, 59, 59));
-            if(comp > new Date(time[0], time[1], time[2]-7, 0, 0, 0) && comp < new Date(time[0], time[1], time[2], 23, 59, 59)) {
+            if(comp > new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate()-7, 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate(), 23, 59, 59, 999))) {
               tasks.status = "completed";
               break;
             }
@@ -134,12 +130,10 @@ app.get("/tasks/due/:date", async function (req, res) {
         }
         task.push(tasks);
       }
-      else if(tasks.reoccurrence === "monthly" && tasks.endDate.toISOString().split(/[-T]/)[2] === req.params.date.split(/[-T]/)[2]) {
-        let time = req.params.date.split(/[-T]/);
+      else if(tasks.reoccurrence === "monthly" && tasks.endDate.getDate() === time.getDate()) {
         if(tasks.completedAt) {
           for(let comp of tasks.completedAt) {
-            console.log(comp, ' ', new Date(time[0], time[1], 1, 1, 0, 0), ' ', new Date(time[0], time[1], 0, 23, 59, 59));
-            if(comp > new Date(time[0], time[1]-1, 1, 1, 0, 0) && comp < new Date(time[0], time[1], 0, 23, 59, 59)) {
+            if(comp > new Date(Date.UTC(time.getFullYear(), time.getMonth(), 1, 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), time.getMonth(), 0, 23, 59, 59, 999))) {
               tasks.status = "completed";
               break;
             }
@@ -147,12 +141,11 @@ app.get("/tasks/due/:date", async function (req, res) {
         }
         task.push(tasks);
       }
-      else if(tasks.reoccurrence === "yearly" && tasks.endDate.toISOString().split(/[-T]/)[1] === req.params.date.split(/[-T]/)[1]
-      && tasks.endDate.toISOString().split(/[-T]/)[2] === req.params.date.split(/[-T]/)[2]) {
-        let time = req.params.date.split(/[-T]/);
+      else if(tasks.reoccurrence === "yearly" && tasks.endDate.getMonth() === time.getMonth()
+      && tasks.endDate.getDate() === time.getDate()) {
         if(tasks.completedAt) {
           for(let comp of tasks.completedAt) {
-            if(comp > new Date(time[0], 0, 0, 0, 0, 0) && comp < new Date(time[0], 12, 31, 23, 59, 59)) {
+            if(comp > new Date(Date.UTC(time.getFullYear(), 0, 0, 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), 12, 31, 23, 59, 59, 999))) {
               tasks.status = "completed";
               break;
             }
