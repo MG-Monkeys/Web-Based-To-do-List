@@ -144,6 +144,7 @@ By signing below, all team members agree to follow these rules:
 7. Repeating to-dos
     - Use Daily/Weekly/Monthly reminders
     - Users should select beginning/end of week/month to have to-do's do
+    - Backend computation of completion based on stored dates in the database
 
 8. Email notifications (SMS - Maybe)
     - utilize external package Email service to send user reminders 
