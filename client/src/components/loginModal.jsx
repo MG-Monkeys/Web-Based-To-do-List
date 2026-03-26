@@ -27,10 +27,10 @@ export default function LoginModal({ isOpen, onClose, Colors }) {
             <input type="password" name="password" />
           </label>
           <div>
-            <button type="submit" className="modal-button">
+            <button type="submit" className="modal-button" style={{ backgroundColor: Colors.tertiary}}>
               Log In
             </button>
-            <button type="button" className="modal-button" onClick={onClose}>
+            <button type="button" className="modal-button" onClick={onClose} style={{ backgroundColor: Colors.tertiary}}>
               Cancel
             </button>
           </div>

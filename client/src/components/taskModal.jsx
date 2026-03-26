@@ -76,10 +76,10 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
             <textarea rows="4" cols="30" name="description" />
           </label>
           <div>
-            <button type="submit" className="modal-button">
+            <button type="submit" className="modal-button" style={{ backgroundColor: Colors.tertiary }}>
               Add
             </button>
-            <button type="button" className="modal-button" onClick={onClose}>
+            <button type="button" className="modal-button" onClick={onClose} style={{ backgroundColor: Colors.tertiary }}>
               Cancel
             </button>
           </div>
