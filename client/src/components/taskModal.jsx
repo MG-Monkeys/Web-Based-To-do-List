@@ -94,6 +94,11 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
           </label>
           {error ? <p className="auth-message error">{error}</p> : null}
           <div>
+          <label>
+            Tags:
+            <input type="text" placeholder="School, Work, Divorce Hearing, etc..." style={{ width: "60%" }}/>
+            <button class="ai-button" style={{ backgroundColor: Colors.tertiary}}>AI</button>
+          </label>
             <button type="submit" className="modal-button" disabled={isSubmitting}>
               {isSubmitting ? "Adding..." : "Add"}
             </button>
