@@ -115,8 +115,6 @@ By signing below, all team members agree to follow these rules:
     - Add primary, secondary, trutiary colors
     - Look for text editor packages to add
 
-## Sprint 2:
-
 3. Using ai to automatically generate tags
     - Hit an external genAI api to create tags
     - Tag validation
@@ -126,13 +124,13 @@ By signing below, all team members agree to follow these rules:
     - Hit the specific browsers API to send notifs
     - User-set notification time
 
+## Sprint 2:
+
 5. (Start) Create a mascot that also acts like a chatbot (Monkey-see Monkey-do)
     - GenAI API for the chatbot. 
     - Interact with to-dos (Have celebrations/negative reactions when one is not done)
     - Create per-page popup that the user can interact with
     - Interface with the to-do's to create reactions.
-
-## Sprint 3:
 
 6. (Start) Group to-do list for team projects
     - Non-authed p2p invitiation 
@@ -144,14 +142,10 @@ By signing below, all team members agree to follow these rules:
         - Non-hierarchical approach, users will create to-dos and have a "liking" system that will similar to assignment
 
 7. Repeating to-dos
-    - Use weekly/monthly reminders 
+    - Use Daily/Weekly/Monthly reminders
+    - Users should select beginning/end of week/month to have to-do's do
+    - Backend computation of completion based on stored dates in the database
 
-## Sprint 4:
-
-(Finish) Create a mascot that also acts like a chatbot (Monkey-see Monkey-do)
-
-(Finish) Group to-do list for team projects
-
-2. Email notifications (SMS - Maybe)
+8. Email notifications (SMS - Maybe)
     - utilize external package Email service to send user reminders 
     - (if using sms - find an pacakge for that)

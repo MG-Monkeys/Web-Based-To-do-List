@@ -1,24 +1,41 @@
+import { useState } from "react";
 import getFormattedDate from "../utils/getFormattedDate";
 
 export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen) return null;
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const formJson = Object.fromEntries(formData.entries());
+
+    const date = formJson.date;
+    const startTime = formJson.startTime || "09:00";
+    const endTime = formJson.endTime || "10:00";
+    const isAllDay = formJson.allDay === "on";
+    const start = isAllDay ? `${date}T00:00` : `${date}T${startTime}`;
+    const end = isAllDay ? `${date}T23:59` : `${date}T${endTime}`;
     const newTask = {
-      id: crypto.randomUUID(),
       title: formJson.title,
-      start: formJson.date + "T" + formJson.startTime,
-      end: formJson.date + "T" + formJson.endTime,
-      allDay: formJson.allDay,
-      repeat: formJson.repeat,
+      start,
+      end,
+      allDay: isAllDay,
       description: formJson.description,
     };
-    console.log(newTask);
-    onAddTask(newTask);
-    onClose();
+
+    setError("");
+    setIsSubmitting(true);
+    try {
+      await onAddTask(newTask);
+      onClose();
+    } catch (submitError) {
+      setError(submitError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -36,7 +53,7 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
         <form onSubmit={handleSubmit}>
           <label>
             Title:
-            <input type="text" placeholder="Title" name="title" />
+            <input type="text" placeholder="Title" name="title" required />
           </label>
           <label>
             Date:
@@ -51,11 +68,11 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
           <div className="time-row">
             <label>
               Start Time:
-              <input type="time" name="startTime" />
+              <input type="time" name="startTime" defaultValue="09:00" />
             </label>
             <label>
               End Time:
-              <input type="time" name="endTime" />
+              <input type="time" name="endTime" defaultValue="10:00" />
             </label>
           </div>
           <label>
@@ -75,11 +92,17 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
             Description:
             <textarea rows="4" cols="30" name="description" />
           </label>
+          {error ? <p className="auth-message error">{error}</p> : null}
           <div>
-            <button type="submit" className="modal-button">
-              Add
+            <button type="submit" className="modal-button" disabled={isSubmitting}>
+              {isSubmitting ? "Adding..." : "Add"}
             </button>
-            <button type="button" className="modal-button" onClick={onClose}>
+            <button
+              type="button"
+              className="modal-button"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </button>
           </div>

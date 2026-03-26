@@ -1,4 +1,10 @@
-export default function NavBar({ onLoginClick, onColorClick, Colors }) {
+export default function NavBar({
+  onLoginClick,
+  onLogoutClick,
+  onColorClick,
+  Colors,
+  authUser,
+}) {
   return (
     <nav
       className="navbar"
@@ -16,10 +22,10 @@ export default function NavBar({ onLoginClick, onColorClick, Colors }) {
       </div>
       <button
         className="login-button"
-        onClick={onLoginClick}
+        onClick={authUser ? onLogoutClick : onLoginClick}
         style={{ backgroundColor: Colors.tertiary, color: Colors.tertiaryText }}
       >
-        Log In
+        {authUser ? `Log Out (${authUser.username})` : "Log In / Sign Up"}
       </button>
     </nav>
   );
