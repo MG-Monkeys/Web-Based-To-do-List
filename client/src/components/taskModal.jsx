@@ -80,6 +80,15 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
             <input type="checkbox" name="allDay" />
           </label>
           <label>
+            Repeat?
+            <select name="repeat">
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+          <label>
             Description:
             <textarea rows="4" cols="30" name="description" />
           </label>
