@@ -113,6 +113,13 @@ label {
   margin: 5% 5%;
 }
 
+.ai-button {
+  width: 7%;
+  border-radius: 100px;
+  border: none;
+  background-color: #acacfc;
+}
+
 .auth-toggle-row {
   display: flex;
   justify-content: center;
