@@ -100,67 +100,77 @@ app.get("/tasks/:id", async function (req, res) {
 // GET /tasks/due/:date - Get tasks due on a specific date
 app.get("/tasks/due/:date", async function (req, res) {
   try {
-    const task = await Task.find({ endDate: req.params.date, reoccurrence: "none" });
-    if (!task) {
-      return res.status(404).json({ error: "Task not found" });
-    }
+    const queryDate = new Date(req.params.date);
+    const tasks = await Task.find({ endDate: req.params.date, reoccurrence: "none" });
+    const recurringTasks = await Task.find({ reoccurrence: { $ne: "none" } });
 
-    const reoccurentTask = await Task.find({ reoccurrence: { $ne: "none" } });
-    const time = new Date(req.params.date);
-    for(const tasks of reoccurentTask) {
-      if(tasks.reoccurrence === "daily") {
-        if(tasks.completedAt) {
-          for(let comp of tasks.completedAt) {
-            if(comp > new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate(), 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate(), 23, 59, 59, 999))) {
-              tasks.status = "completed";
-              break;
-            }
-          }
-        }
-        task.push(tasks);
-      }
-      else if(tasks.reoccurrence === "weekly" && new Date(tasks.endDate).getDay() === time.getDay()) {
-        if(tasks.completedAt) {
-          for(let comp of tasks.completedAt) {
-            if(comp > new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate()-7, 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), time.getMonth(), time.getDate(), 23, 59, 59, 999))) {
-              tasks.status = "completed";
-              break;
-            }
-          }
-        }
-        task.push(tasks);
-      }
-      else if(tasks.reoccurrence === "monthly" && tasks.endDate.getDate() === time.getDate()) {
-        if(tasks.completedAt) {
-          for(let comp of tasks.completedAt) {
-            if(comp > new Date(Date.UTC(time.getFullYear(), time.getMonth(), 1, 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), time.getMonth(), 0, 23, 59, 59, 999))) {
-              tasks.status = "completed";
-              break;
-            }
-          }
-        }
-        task.push(tasks);
-      }
-      else if(tasks.reoccurrence === "yearly" && tasks.endDate.getMonth() === time.getMonth()
-      && tasks.endDate.getDate() === time.getDate()) {
-        if(tasks.completedAt) {
-          for(let comp of tasks.completedAt) {
-            if(comp > new Date(Date.UTC(time.getFullYear(), 0, 0, 0, 0, 0)) && comp < new Date(Date.UTC(time.getFullYear(), 12, 31, 23, 59, 59, 999))) {
-              tasks.status = "completed";
-              break;
-            }
-          }
-        }
-        task.push(tasks);
+    for (const task of recurringTasks) {
+      if (isTaskDueOnDate(task, queryDate) && !isCompletedInPeriod(task, queryDate)) {
+        task.status = "completed";
+        tasks.push(task);
       }
     }
 
-    return res.json(task);
+    return res.json(tasks);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Error fetching task" });
   }
 });
+
+// Helper: Check if recurring task is due on queryDate
+function isTaskDueOnDate(task, queryDate) {
+  const endDate = new Date(task.endDate);
+  switch (task.reoccurrence) {
+    case "daily":
+      return true; // Daily tasks are always "due" on any date
+    case "weekly":
+      return endDate.getUTCDay() === queryDate.getUTCDay();
+    case "monthly":
+      return endDate.getUTCDate() === queryDate.getUTCDate();
+    case "yearly":
+      return endDate.getUTCMonth() === queryDate.getUTCMonth() && endDate.getUTCDate() === queryDate.getUTCDate();
+    default:
+      return false;
+  }
+}
+
+// Helper: Check if task was completed within the period for queryDate
+function isCompletedInPeriod(task, queryDate) {
+  if (!task.completedAt || task.completedAt.length === 0) return false;
+
+  const { start, end } = getPeriodBounds(task.reoccurrence, queryDate);
+  return task.completedAt.some(comp => comp >= start && comp <= end);
+}
+
+// Helper: Get UTC start/end bounds for the period
+function getPeriodBounds(reoccurrence, queryDate) {
+  const year = queryDate.getUTCFullYear();
+  const month = queryDate.getUTCMonth();
+  const day = queryDate.getUTCDate();
+
+  switch (reoccurrence) {
+    case "daily":
+      return {
+        start: new Date(Date.UTC(year, month, day, 0, 0, 0)),
+        end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+      };
+    case "weekly":
+      const weekStart = new Date(Date.UTC(year, month, day - queryDate.getUTCDay(), 0, 0, 0));
+      const weekEnd = new Date(Date.UTC(year, month, day - queryDate.getUTCDay() + 6, 23, 59, 59, 999));
+      return { start: weekStart, end: weekEnd };
+    case "monthly":
+      const monthStart = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+      const monthEnd = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)); // Last day of month
+      return { start: monthStart, end: monthEnd };
+    case "yearly":
+      const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+      const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+      return { start: yearStart, end: yearEnd };
+    default:
+      return { start: new Date(0), end: new Date(0) };
+  }
+}
 
 // GET /tasks/tag/:tag - get posts with "tag"
 app.get("/tasks/tag/:tag", async function (req, res) {
