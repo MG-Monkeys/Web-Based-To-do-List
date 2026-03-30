@@ -54,7 +54,7 @@ Requirements: 6
 
 ---
 
-# Week 8
+# Week 11
 
 ## Description
 
@@ -64,3 +64,16 @@ LOC: 225
 
 Features: 2
 Requirements: 1
+
+---
+
+# Week 12
+
+## Description
+
+Created group and invite models. Created endpoints for groups and invites. Created JWT authentication
+
+LOC: 312
+
+Features: 3
+Requirements: 5
