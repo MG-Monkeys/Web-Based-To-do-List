@@ -6,11 +6,18 @@ import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
 import User from "./models/User.js";
+import Groups from "./models/Group.js";
+import Invites from "./models/Invites.js";
 import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
 import { Filter } from 'bad-words';
 import nodemailer from "nodemailer";
 import { getTasksbyDate } from "./services/tasks.js";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+// password hashing
+const salt = await bcrypt.genSalt(10);
 
 const transporter = nodemailer.createTransport({
       // host: "smtp.ethereal.email",
@@ -27,6 +34,18 @@ const transporter = nodemailer.createTransport({
     });
 
 dotenv.config();
+
+// JWT authentication middleware
+const auth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (e) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
 
 const app = express();
 const ai = new GoogleGenAI({});
@@ -64,15 +83,42 @@ app.listen(5500, function () {
 // GET / - 
 app.get("/", function (req, res) {
   res.send("API is running");
-  getTasksbyDate("2026-03-24T23:59:00.000+00:00");
 });
 
 // TASKS
 
 // GET /tasks - Show all tasks
-app.get("/tasks", async function (req, res) {
+// app.get("/tasks", async function (req, res) {
+//   try {
+//     const tasks = await Task.find({});
+//     if(!tasks || tasks.length === 0) {
+//       return res.status(404).json({ error: "Tasks not found" });
+//     }
+//     return res.json(tasks);
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).send("Error fetching tasks");
+//   }
+// });
+
+// GET /tasks - Show all tasks for a user
+app.get("/tasks/:AssignedTo", auth, async function (req, res) {
   try {
-    const tasks = await Task.find({});
+    const tasks = await Task.find({ AssignedTo: req.params.AssignedTo });
+    if(!tasks || tasks.length === 0) {
+      return res.status(404).json({ error: "Tasks not found" });
+    }
+    return res.json(tasks);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error fetching tasks");
+  }
+});
+
+// GET /tasks - Show all tasks for a group
+app.get("/tasks/:GroupId", auth, async function (req, res) {
+  try {
+    const tasks = await Task.find({ groupId: req.params.GroupId });
     if(!tasks || tasks.length === 0) {
       return res.status(404).json({ error: "Tasks not found" });
     }
@@ -84,7 +130,7 @@ app.get("/tasks", async function (req, res) {
 });
 
 // GET /tasks/:id - Get one task by id
-app.get("/tasks/:id", async function (req, res) {
+app.get("/tasks/:id", auth, async function (req, res) {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) {
@@ -98,7 +144,7 @@ app.get("/tasks/:id", async function (req, res) {
 });
 
 // GET /tasks/due/:date - Get tasks due on a specific date
-app.get("/tasks/due/:date", async function (req, res) {
+app.get("/tasks/due/:date", auth,async function (req, res) {
   try {
     const queryDate = new Date(req.params.date);
     const tasks = await Task.find({ endDate: req.params.date, reoccurrence: "none" });
@@ -173,7 +219,7 @@ function getPeriodBounds(reoccurrence, queryDate) {
 }
 
 // GET /tasks/tag/:tag - get posts with "tag"
-app.get("/tasks/tag/:tag", async function (req, res) {
+app.get("/tasks/tag/:tag", auth, async function (req, res) {
   try {
     const tasks = await Task.find({ tags: req.params.tag });
     if (!tasks || tasks.length === 0) {
@@ -187,7 +233,7 @@ app.get("/tasks/tag/:tag", async function (req, res) {
 });
 
 // POST /tasks - Add new task
-app.post("/tasks", async function (req, res) {
+app.post("/tasks", auth, async function (req, res) {
   try {
     const { title, description, tags, startDate, endDate, reoccurrence, assignedTo, groupId } =
       req.body;
@@ -228,7 +274,7 @@ app.post("/tasks", async function (req, res) {
 });
 
 // UPDATE /tasks/:id - Update a task
-app.put("/tasks/:id", async function (req, res) {
+app.put("/tasks/:id", auth, async function (req, res) {
   try {
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
     if(!updatedTask) {
@@ -246,7 +292,7 @@ app.put("/tasks/:id", async function (req, res) {
 });
 
 // UPDATE /tasks/:id - Update a task to completed and set completedAt
-app.put("/tasks/completed/:id", async function (req, res) {
+app.put("/tasks/completed/:id", auth, async function (req, res) {
   try {
     const updatedTask = await Task.findById(req.params.id);
 
@@ -281,7 +327,7 @@ app.put("/tasks/completed/:id", async function (req, res) {
 });
 
 // DELETE /delete - Delete a task
-app.delete("/tasks/:id", async function (req, res) {
+app.delete("/tasks/:id", auth, async function (req, res) {
   try {
     const deletedTask = await Task.findByIdAndDelete(req.params.id);
     if(!deletedTask) {
@@ -309,6 +355,53 @@ app.delete("/tasks/:id", async function (req, res) {
 //     res.status(500).send("Error deleting post");
 //   }
 // });
+
+// Invites
+
+// GET /invites/:recipientId - get invites for a user
+app.get("/invites/:recipientId", auth, async function (req, res) {
+  try {
+    const invites = await Invites.find({recipientId: req.params.recipientId});
+    return res.json(invites);
+  } catch (error) {
+    console.error("Error fetching invites: ", error);
+    res.status(500).json({ error: "Error fetching invites" });
+  }
+});
+
+// POST /invites - create an invite
+app.post("/invites", auth, async function (req, res) {
+  try {
+    const { senderId, recipientId, groupId } = req.body;
+
+    const newInvite = await Invites.create({ senderId, recipientId, groupId });
+    return res.status(201).json({
+      message: "Invite created",
+      invite: newInvite,
+    });
+  } catch (error) {
+    console.error("Error creating invite: ", error);
+    res.status(500).json({ error: "Error creating invite" });
+  }
+});
+
+// DELETE /invites/delete/:id - delete an invite by id, use this for accepting or declining an invite
+app.post("/invites/delete/:id", auth, async function (req, res) {
+  try {
+    const { senderId, recipientId, groupId } = req.body;
+
+    const deletedInvite = await Invites.findByIdAndDelete(req.params.id);
+    if(!deletedInvite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting invite: ", error);
+    res.status(500).json({ error: "Error deleting invite" });
+  }
+});
+
+
+
 
 // TAGS
 
@@ -342,7 +435,7 @@ app.get("/tags/:id", async function (req, res) {
 });
 
 // POST /tags - Add new tag
-app.post("/tags", async function (req, res) {
+app.post("/tags", auth, async function (req, res) {
   try {
     // Check if tag already exists
     const tag = await Tag.find({tagName: req.body.tagName});
@@ -369,7 +462,7 @@ app.post("/tags", async function (req, res) {
 });
 
 // DELETE /tags/:id - Delete a tag
-app.delete("/tags/:id", async function (req, res) {
+app.delete("/tags/:id", auth, async function (req, res) {
   try {
     const deletedTag = await Tag.findByIdAndDelete(req.params.id);
     if(!deletedTag) {
@@ -380,6 +473,73 @@ app.delete("/tags/:id", async function (req, res) {
   } catch (e) {
     console.error(e);
     res.status(500).send("Error deleting tag");
+  }
+});
+
+// GROUPS
+
+// GET /groups/:id - get group by id
+app.get("/groups/:id", async function (req, res) {
+  try {
+    const group = await Groups.findById(req.params.id);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+    return res.json(group);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error fetching group");
+  }
+});
+
+// POST /groups - create a group
+app.post("/groups/", auth, async function (req, res) {
+  try {
+    const { groupName, ownerId } = req.body;
+
+    const newGroup = await Groups.create({ groupName, ownerId });
+    return res.status(201).json({
+      message: "Group created",
+      group: newGroup,
+    });
+  } catch (error) {
+    console.error("Error creating group: ", error);
+    res.status(500).json({ error: "Error creating group" });
+  }
+});
+
+// UPDATE /groups/:id - update a group name
+app.put("/groups/:id", auth, async function (req, res) {
+  try {
+    const { groupName } = req.body;
+
+    const updatedGroup = await Groups.findByIdAndUpdate(req.params.id, { groupName }, { new: true, runValidators: true });
+    if(!updatedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    return res.json({
+      message: "Group updated",
+      group: updatedGroup,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error updating group");
+  }
+});
+
+// DELETE /groups/:id - delete a group
+app.delete("/groups/:id", auth, async function (req, res) {
+  try {
+    const deletedGroup = await Groups.findByIdAndDelete(req.params.id);
+    if(!deletedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    return res.json("Delete complete");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error deleting group");
   }
 });
 
@@ -411,7 +571,7 @@ app.post("/users", async function (req, res) {
         .json({ error: "username, email, and password are required" });
     }
 
-    const newUser = await User.create({ username, email, password });
+    const newUser = await User.create({ username, email, password: await bcrypt.hash(password, 10) });
     return res.status(201).json({
       message: "User created",
       user: {
@@ -430,7 +590,7 @@ app.post("/users", async function (req, res) {
 });
 
 // UPDATE /users/:id - Update a user
-app.put("/users/:id", async function (req, res) {
+app.put("/users/:id", auth, async function (req, res) {
   try {
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
     if(!updatedUser) {
@@ -447,8 +607,29 @@ app.put("/users/:id", async function (req, res) {
   }
 });
 
+// UPDATE /users/acceptInvite - Add group to user
+app.put("/users/acceptInvite/:id", auth, async function (req, res) {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+      $push: { groups: req.body.groupId }
+    }, { new: true, runValidators: true, });
+    if(!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({
+      message: "User updated",
+      user: updatedUser,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error updating user");
+  }
+});
+
+
 // DELETE /delete - Delete a User
-app.delete("/users/:id", async function (req, res) {
+app.delete("/users/:id", auth, async function (req, res) {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if(!deletedUser) {
@@ -461,6 +642,19 @@ app.delete("/users/:id", async function (req, res) {
     res.status(500).send("Error deleting User");
   }
 });
+
+// AUTH
+
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  res.json({ token });
+});
+
 
 // AI
 

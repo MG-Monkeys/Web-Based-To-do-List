@@ -1,68 +1,70 @@
 @baseUrl = http://localhost:5500
 
-@taskId = 69c0dbbbe99c0417a6926f29
+@taskId = 69c83da539a764a3aca822fb
 @tagId = 699b6c5d59f4113005bd0095
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YzlmN2NiNDUwYzFlZDM0MmZkMDg3YSIsImlhdCI6MTc3NDg0NzQxNiwiZXhwIjoxNzc0ODUxMDE2fQ.uQ16FfLjskI-CqpJqj1K4N7sjeLzKjWZji39xuQVlBE
+@userId = 69c9f7cb450c1ed342fd087a
+@groupId = 69ca05d5b866549b8c776a56
 
 ### Health
 GET {{baseUrl}}/
 
-_id=1
-
 ### GET USER
-GET {{baseUrl}}/users/68c32b2cc32bc1b53e98db6f
+GET {{baseUrl}}/users/69c9f7cb450c1ed342fd087a
 
 ### CREATE USER (mock)
 POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "username": "mockuser01",
-  "email": "mockuser01@example.com",
+  "username": "TestUser01",
+  "email": "Test@example.com",
   "password": "P@ssw0rd123"
 }
+
+### Login 
+POST {{baseUrl}}/auth/Login
+Content-Type: application/json
+
+{
+  "email": "Test@example.com",
+  "password": "P@ssw0rd123"
+}
+
+
 
 ### TASKS - CREATE
 POST {{baseUrl}}/tasks
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "title": "Test Logic",
+  "title": "Test Completion Logic",
   "description": "Reoccurrence test",
   "status": "todo",
   "startDate": "2026-03-22T09:00:00.000Z",
-  "endDate": "2026-03-06T23:59:00.000Z",
+  "endDate": "2026-03-29T23:59:00.000Z",
   "reoccurrence": "weekly",
   "assignedTo": "mockuser01"
 }
 
-### TASKS - READ ALL
-GET {{baseUrl}}/tasks
+
+### TASKS - READ BY USER (set @userId first)
+GET {{baseUrl}}/tasks/{{userId}}
+Authorization: Bearer {{token}}
 
 ### TASKS - READ ONE (set @taskId first)
 GET {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{token}}
 
 ### TASKS - READ BY DATE (set @date first)
-GET {{baseUrl}}/tasks/due/2027-03-24T23:59:00.000+00:00
-
-### TASKS - READ ONE (set @taskId first)
-GET {{baseUrl}}/tasks/699818b1a323b6ed9680dc6d
-
-### TASKS - CREATE TAsK
-POST {{baseUrl}}/tasks
-Content-Type: application/json
-
-{
-  "title": "REST TEST",
-  "description": "TESTING REST",
-  "startDate": "2026-02-18T09:00:00.000Z",
-  "endDate": "2026-02-20T23:59:00.000Z",
-  "assignedTo": "000",
-  "groupId": "0"
-}
+GET {{baseUrl}}/tasks/due/2026-03-23T23:59:00.000+00:00
+Authorization: Bearer {{token}}
 
 ### TASKS - UPDATE (set @taskId first)
 PUT {{baseUrl}}/tasks/{{taskId}}
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "status": "completed",
@@ -72,12 +74,39 @@ Content-Type: application/json
 ### TASKS - Complete (set @taskId first)
 PUT {{baseUrl}}/tasks/completed/{{taskId}}
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
 }
 
 ### TASKS - DELETE (set @taskId first)
 DELETE {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{token}}
+
+
+
+### GROUPS - CREATE
+POST {{baseUrl}}/groups
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ownerId": "{{userId}}",
+  "groupName": "Test Group 1"
+}
+
+
+
+### INVITES - CREATE
+POST {{baseUrl}}/invites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "senderId": "{{userId}}",
+  "recipientId": "6995e27b138a86eac259620c",
+  "groupId": "{{groupId}}"
+}
 
 
 ### TAGS - READ ALL
@@ -89,6 +118,7 @@ GET {{baseUrl}}/tags/{{tagId}}
 ### TAGS - CREATE
 POST {{baseUrl}}/tags
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "tagName": "REST1"
@@ -97,10 +127,12 @@ Content-Type: application/json
 ### TAGS - CREATE
 POST {{baseUrl}}/tags
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "tagName": "Shit"
 }
+
 
 
 ### AI - TEST
@@ -111,6 +143,8 @@ Content-Type: application/json
   "title": "Do Homework 3",
   "description": "Complete the report for Homework 3 for ASE285"
 }
+
+
 
 ### EMAIL - TEST
 POST {{baseUrl}}/notif
