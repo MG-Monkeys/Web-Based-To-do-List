@@ -1,7 +1,7 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 
-export default function Calendar({ tasks, onRemoveTask }) {
+export default function Calendar({ tasks, onRemoveTask, Colors }) {
   function handleEventClick(clickInfo) {
     if (
       window.confirm(
@@ -13,11 +13,18 @@ export default function Calendar({ tasks, onRemoveTask }) {
   }
 
   return (
-    <FullCalendar
-      plugins={[dayGridPlugin]}
-      initialView="dayGridMonth"
-      events={tasks}
-      eventClick={handleEventClick}
-    />
+    <div
+      style={{
+        "--fc-button-bg-color": Colors.tertiary,
+        "--fc-button-text-color": Colors.tertiaryText,
+      }}
+    >
+      <FullCalendar
+        plugins={[dayGridPlugin]}
+        initialView="dayGridMonth"
+        events={tasks}
+        eventClick={handleEventClick}
+      />
+    </div>
   );
 }
