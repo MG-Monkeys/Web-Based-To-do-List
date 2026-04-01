@@ -130,7 +130,7 @@ function App() {
               color: colors.tertiaryText,
             }}
           >
-            New Task
+            <i className="fa-solid fa-plus" />
           </button>
           <p>This Week:</p>
           <TaskList tasks={tasks} onRemoveTask={removeTask} />

@@ -25,8 +25,9 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
       end,
       allDay: isAllDay,
       description: formJson.description,
-      tags: tags
+      tags: tags,
     };
+    console.log(newTask);
 
     setError("");
     setIsSubmitting(true);
@@ -96,13 +97,27 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
           </label>
           <label>
             Tags:
-            <input type="text" name="tags" placeholder="School, Work, Divorce Hearing, etc..." style={{ width: "60%" }}/>
-            <button class="ai-button" style={{ backgroundColor: Colors.tertiary}}>AI</button>
+            <input
+              type="text"
+              name="tags"
+              placeholder="School, Work, Divorce Hearing, etc..."
+              style={{ width: "60%" }}
+            />
+            <button
+              class="ai-button"
+              style={{ backgroundColor: Colors.tertiary }}
+            >
+              AI
+            </button>
           </label>
-          
+
           {error ? <p className="auth-message error">{error}</p> : null}
           <div>
-            <button type="submit" className="modal-button" disabled={isSubmitting}>
+            <button
+              type="submit"
+              className="modal-button"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Adding..." : "Add"}
             </button>
             <button
