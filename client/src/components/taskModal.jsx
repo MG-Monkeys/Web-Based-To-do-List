@@ -18,13 +18,16 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
     const isAllDay = formJson.allDay === "on";
     const start = isAllDay ? `${date}T00:00` : `${date}T${startTime}`;
     const end = isAllDay ? `${date}T23:59` : `${date}T${endTime}`;
+    const tags = formJson.tags.split(",");
     const newTask = {
       title: formJson.title,
       start,
       end,
       allDay: isAllDay,
       description: formJson.description,
+      tags: tags,
     };
+    console.log(newTask);
 
     setError("");
     setIsSubmitting(true);
@@ -92,14 +95,29 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
             Description:
             <textarea rows="4" cols="30" name="description" />
           </label>
-          {error ? <p className="auth-message error">{error}</p> : null}
-          <div>
           <label>
             Tags:
-            <input type="text" placeholder="School, Work, Divorce Hearing, etc..." style={{ width: "60%" }}/>
-            <button class="ai-button" style={{ backgroundColor: Colors.tertiary}}>AI</button>
+            <input
+              type="text"
+              name="tags"
+              placeholder="School, Work, Divorce Hearing, etc..."
+              style={{ width: "60%" }}
+            />
+            <button
+              class="ai-button"
+              style={{ backgroundColor: Colors.tertiary }}
+            >
+              AI
+            </button>
           </label>
-            <button type="submit" className="modal-button" disabled={isSubmitting}>
+
+          {error ? <p className="auth-message error">{error}</p> : null}
+          <div>
+            <button
+              type="submit"
+              className="modal-button"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Adding..." : "Add"}
             </button>
             <button
