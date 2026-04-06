@@ -77,3 +77,16 @@ LOC: 312
 
 Features: 3
 Requirements: 5
+
+---
+
+# Week 13
+
+## Description
+
+Created an api call for the user to directly talk to the assistant
+
+LOC: 16
+
+Features: 3
+Requirements: 6
