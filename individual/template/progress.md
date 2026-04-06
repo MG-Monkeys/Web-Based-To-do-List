@@ -53,3 +53,40 @@ Features: 2
 Requirements: 6
 
 ---
+
+# Week 11
+
+## Description
+
+can get by date and tasks will reoccurr. Created a complete endpoint. Can get completion status via completedAgt computations
+
+LOC: 225
+
+Features: 2
+Requirements: 1
+
+---
+
+# Week 12
+
+## Description
+
+Created group and invite models. Created endpoints for groups and invites. Created JWT authentication
+
+LOC: 312
+
+Features: 3
+Requirements: 5
+
+---
+
+# Week 13
+
+## Description
+
+Created an api call for the user to directly talk to the assistant
+
+LOC: 16
+
+Features: 3
+Requirements: 6

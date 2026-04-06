@@ -35,8 +35,14 @@ const taskSchema = new mongoose.Schema(
       required: false,
     },
     completedAt: {
-      type: Date,
+      type: [Date],
       required: false,
+    },
+    reoccurrence: {
+      type: String,
+      required: false,
+      enum: ["none", "daily", "weekly", "monthly", "yearly"],
+      default: "none",
     },
     assignedTo: {
       type: String,

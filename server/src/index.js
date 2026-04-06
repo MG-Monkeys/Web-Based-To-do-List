@@ -6,12 +6,20 @@ import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
 import User from "./models/User.js";
+import Groups from "./models/Group.js";
+import Invites from "./models/Invites.js";
 import uri from "./util/uri.js";
 import { GoogleGenAI } from "@google/genai";
 
 import { Filter } from "bad-words";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
+import { getTasksbyDate } from "./services/tasks.js";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+// password hashing
+const salt = await bcrypt.genSalt(10);
 
 const transporter = nodemailer.createTransport({
       // host: "smtp.ethereal.email",
@@ -30,32 +38,22 @@ const transporter = nodemailer.createTransport({
 
 dotenv.config();
 
+// JWT authentication middleware
+const auth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (e) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
 const app = express();
 const ai = new GoogleGenAI({});
 const model = "gemini-2.5-flash";
 const filter = new Filter();
-
-function hashPassword(password) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(password, storedPassword) {
-  if (!storedPassword?.includes(":")) {
-    return password === storedPassword;
-  }
-
-  const [salt, key] = storedPassword.split(":");
-  const storedKey = Buffer.from(key, "hex");
-  const derivedKey = scryptSync(password, salt, 64);
-
-  if (storedKey.length !== derivedKey.length) {
-    return false;
-  }
-
-  return timingSafeEqual(storedKey, derivedKey);
-}
 
 // Middleware
 app.use(express.json());
@@ -92,9 +90,37 @@ app.get("/", function (req, res) {
 // TASKS
 
 // GET /tasks - Show all tasks
-app.get("/tasks", async function (req, res) {
+// app.get("/tasks", async function (req, res) {
+//   try {
+//     const tasks = await Task.find({});
+//     if(!tasks || tasks.length === 0) {
+//       return res.status(404).json({ error: "Tasks not found" });
+//     }
+//     return res.json(tasks);
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).send("Error fetching tasks");
+//   }
+// });
+
+// GET /tasks - Show all tasks for a user
+app.get("/tasks/:AssignedTo", auth, async function (req, res) {
   try {
-    const tasks = await Task.find({});
+    const tasks = await Task.find({ AssignedTo: req.params.AssignedTo });
+    if(!tasks || tasks.length === 0) {
+      return res.status(404).json({ error: "Tasks not found" });
+    }
+    return res.json(tasks);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error fetching tasks");
+  }
+});
+
+// GET /tasks - Show all tasks for a group
+app.get("/tasks/:GroupId", auth, async function (req, res) {
+  try {
+    const tasks = await Task.find({ groupId: req.params.GroupId });
     if(!tasks || tasks.length === 0) {
       return res.status(404).json({ error: "Tasks not found" });
     }
@@ -106,7 +132,7 @@ app.get("/tasks", async function (req, res) {
 });
 
 // GET /tasks/:id - Get one task by id
-app.get("/tasks/:id", async function (req, res) {
+app.get("/tasks/:id", auth, async function (req, res) {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) {
@@ -119,8 +145,83 @@ app.get("/tasks/:id", async function (req, res) {
   }
 });
 
+// GET /tasks/due/:date - Get tasks due on a specific date
+app.get("/tasks/due/:date", auth,async function (req, res) {
+  try {
+    const queryDate = new Date(req.params.date);
+    const tasks = await Task.find({ endDate: req.params.date, reoccurrence: "none" });
+    const recurringTasks = await Task.find({ reoccurrence: { $ne: "none" } });
+
+    for (const task of recurringTasks) {
+      if (isTaskDueOnDate(task, queryDate) && !isCompletedInPeriod(task, queryDate)) {
+        task.status = "completed";
+        tasks.push(task);
+      }
+    }
+
+    return res.json(tasks);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error fetching task" });
+  }
+});
+
+// Helper: Check if recurring task is due on queryDate
+function isTaskDueOnDate(task, queryDate) {
+  const endDate = new Date(task.endDate);
+  switch (task.reoccurrence) {
+    case "daily":
+      return true; // Daily tasks are always "due" on any date
+    case "weekly":
+      return endDate.getUTCDay() === queryDate.getUTCDay();
+    case "monthly":
+      return endDate.getUTCDate() === queryDate.getUTCDate();
+    case "yearly":
+      return endDate.getUTCMonth() === queryDate.getUTCMonth() && endDate.getUTCDate() === queryDate.getUTCDate();
+    default:
+      return false;
+  }
+}
+
+// Helper: Check if task was completed within the period for queryDate
+function isCompletedInPeriod(task, queryDate) {
+  if (!task.completedAt || task.completedAt.length === 0) return false;
+
+  const { start, end } = getPeriodBounds(task.reoccurrence, queryDate);
+  return task.completedAt.some(comp => comp >= start && comp <= end);
+}
+
+// Helper: Get UTC start/end bounds for the period
+function getPeriodBounds(reoccurrence, queryDate) {
+  const year = queryDate.getUTCFullYear();
+  const month = queryDate.getUTCMonth();
+  const day = queryDate.getUTCDate();
+
+  switch (reoccurrence) {
+    case "daily":
+      return {
+        start: new Date(Date.UTC(year, month, day, 0, 0, 0)),
+        end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+      };
+    case "weekly":
+      const weekStart = new Date(Date.UTC(year, month, day - queryDate.getUTCDay(), 0, 0, 0));
+      const weekEnd = new Date(Date.UTC(year, month, day - queryDate.getUTCDay() + 6, 23, 59, 59, 999));
+      return { start: weekStart, end: weekEnd };
+    case "monthly":
+      const monthStart = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+      const monthEnd = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)); // Last day of month
+      return { start: monthStart, end: monthEnd };
+    case "yearly":
+      const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+      const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+      return { start: yearStart, end: yearEnd };
+    default:
+      return { start: new Date(0), end: new Date(0) };
+  }
+}
+
 // GET /tasks/tag/:tag - get posts with "tag"
-app.get("/tasks/tag/:tag", async function (req, res) {
+app.get("/tasks/tag/:tag", auth, async function (req, res) {
   try {
     const tasks = await Task.find({ tags: req.params.tag });
     if (!tasks || tasks.length === 0) {
@@ -134,9 +235,9 @@ app.get("/tasks/tag/:tag", async function (req, res) {
 });
 
 // POST /tasks - Add new task
-app.post("/tasks", async function (req, res) {
+app.post("/tasks", auth, async function (req, res) {
   try {
-    const { title, description, tags, startDate, endDate, assignedTo, groupId } =
+    const { title, description, tags, startDate, endDate, reoccurrence, assignedTo, groupId } =
       req.body;
 
     if (!title || !startDate || !endDate || !assignedTo) {
@@ -159,6 +260,7 @@ app.post("/tasks", async function (req, res) {
       endDate,
       editedAt: startDate,
       completedAt: null,
+      reoccurrence: reoccurrence ?? "none",
       assignedTo, 
       groupId: groupId ?? "0", 
     });
@@ -174,7 +276,7 @@ app.post("/tasks", async function (req, res) {
 });
 
 // UPDATE /tasks/:id - Update a task
-app.put("/tasks/:id", async function (req, res) {
+app.put("/tasks/:id", auth, async function (req, res) {
   try {
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
     if(!updatedTask) {
@@ -191,8 +293,43 @@ app.put("/tasks/:id", async function (req, res) {
   }
 });
 
+// UPDATE /tasks/:id - Update a task to completed and set completedAt
+app.put("/tasks/completed/:id", auth, async function (req, res) {
+  try {
+    const updatedTask = await Task.findById(req.params.id);
+
+    if (!updatedTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    let update = {};
+
+    if(updatedTask.reoccurrence == "none") {
+      update = {$set: {completedAt: new Date(), status: "completed"}};
+    }
+    else {
+      let dates = updatedTask.completedAt ? updatedTask.completedAt : [];
+      dates.push(new Date());
+      update = {$set: {completedAt: dates}};
+    }
+
+    await updatedTask.updateOne(update, {
+      new: true,
+      runValidators: true,
+    });
+
+
+    return res.json({
+      message: "Task updated",
+      task: updatedTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error updating task" });
+  }
+});
+
 // DELETE /delete - Delete a task
-app.delete("/tasks/:id", async function (req, res) {
+app.delete("/tasks/:id", auth, async function (req, res) {
   try {
     const deletedTask = await Task.findByIdAndDelete(req.params.id);
     if(!deletedTask) {
@@ -220,6 +357,53 @@ app.delete("/tasks/:id", async function (req, res) {
 //     res.status(500).send("Error deleting post");
 //   }
 // });
+
+// Invites
+
+// GET /invites/:recipientId - get invites for a user
+app.get("/invites/:recipientId", auth, async function (req, res) {
+  try {
+    const invites = await Invites.find({recipientId: req.params.recipientId});
+    return res.json(invites);
+  } catch (error) {
+    console.error("Error fetching invites: ", error);
+    res.status(500).json({ error: "Error fetching invites" });
+  }
+});
+
+// POST /invites - create an invite
+app.post("/invites", auth, async function (req, res) {
+  try {
+    const { senderId, recipientId, groupId } = req.body;
+
+    const newInvite = await Invites.create({ senderId, recipientId, groupId });
+    return res.status(201).json({
+      message: "Invite created",
+      invite: newInvite,
+    });
+  } catch (error) {
+    console.error("Error creating invite: ", error);
+    res.status(500).json({ error: "Error creating invite" });
+  }
+});
+
+// DELETE /invites/delete/:id - delete an invite by id, use this for accepting or declining an invite
+app.post("/invites/delete/:id", auth, async function (req, res) {
+  try {
+    const { senderId, recipientId, groupId } = req.body;
+
+    const deletedInvite = await Invites.findByIdAndDelete(req.params.id);
+    if(!deletedInvite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting invite: ", error);
+    res.status(500).json({ error: "Error deleting invite" });
+  }
+});
+
+
+
 
 // TAGS
 
@@ -253,7 +437,7 @@ app.get("/tags/:id", async function (req, res) {
 });
 
 // POST /tags - Add new tag
-app.post("/tags", async function (req, res) {
+app.post("/tags", auth, async function (req, res) {
   try {
     // Check if tag already exists
     const tag = await Tag.find({tagName: req.body.tagName});
@@ -280,7 +464,7 @@ app.post("/tags", async function (req, res) {
 });
 
 // DELETE /tags/:id - Delete a tag
-app.delete("/tags/:id", async function (req, res) {
+app.delete("/tags/:id", auth, async function (req, res) {
   try {
     const deletedTag = await Tag.findByIdAndDelete(req.params.id);
     if(!deletedTag) {
@@ -291,6 +475,73 @@ app.delete("/tags/:id", async function (req, res) {
   } catch (e) {
     console.error(e);
     res.status(500).send("Error deleting tag");
+  }
+});
+
+// GROUPS
+
+// GET /groups/:id - get group by id
+app.get("/groups/:id", async function (req, res) {
+  try {
+    const group = await Groups.findById(req.params.id);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+    return res.json(group);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error fetching group");
+  }
+});
+
+// POST /groups - create a group
+app.post("/groups/", auth, async function (req, res) {
+  try {
+    const { groupName, ownerId } = req.body;
+
+    const newGroup = await Groups.create({ groupName, ownerId });
+    return res.status(201).json({
+      message: "Group created",
+      group: newGroup,
+    });
+  } catch (error) {
+    console.error("Error creating group: ", error);
+    res.status(500).json({ error: "Error creating group" });
+  }
+});
+
+// UPDATE /groups/:id - update a group name
+app.put("/groups/:id", auth, async function (req, res) {
+  try {
+    const { groupName } = req.body;
+
+    const updatedGroup = await Groups.findByIdAndUpdate(req.params.id, { groupName }, { new: true, runValidators: true });
+    if(!updatedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    return res.json({
+      message: "Group updated",
+      group: updatedGroup,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error updating group");
+  }
+});
+
+// DELETE /groups/:id - delete a group
+app.delete("/groups/:id", auth, async function (req, res) {
+  try {
+    const deletedGroup = await Groups.findByIdAndDelete(req.params.id);
+    if(!deletedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    return res.json("Delete complete");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error deleting group");
   }
 });
 
@@ -315,74 +566,6 @@ app.get("/users/:id", async function (req, res) {
   }
 });
 
-// POST /auth/signup - Create account and store user in MongoDB
-app.post("/auth/signup", async function (req, res) {
-  try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ error: "username, email, and password are required" });
-    }
-
-    if (password.length < 8) {
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 8 characters" });
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(409).json({ error: "Email already exists" });
-    }
-
-    const newUser = await User.create({
-      username: username.trim(),
-      email: email.toLowerCase(),
-      password: hashPassword(password),
-    });
-
-    return res.status(201).json({
-      message: "Signup successful",
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error creating user" });
-  }
-});
-
-// POST /auth/login - Verify user credentials
-app.post("/auth/login", async function (req, res) {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "email and password are required" });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user || !verifyPassword(password, user.password)) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
-    return res.json({
-      message: "Login successful",
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error logging in" });
-  }
-});
-
 // POST /users - Add new user
 app.post("/users", async function (req, res) {
   try {
@@ -394,11 +577,7 @@ app.post("/users", async function (req, res) {
         .json({ error: "username, email, and password are required" });
     }
 
-    const newUser = await User.create({
-      username: username.trim(),
-      email: email.toLowerCase(),
-      password: hashPassword(password),
-    });
+    const newUser = await User.create({ username: username.trim(), email: email.toLowerCase(), password: await bcrypt.hash(password, 10) });
     return res.status(201).json({
       message: "User created",
       user: {
@@ -417,7 +596,7 @@ app.post("/users", async function (req, res) {
 });
 
 // UPDATE /users/:id - Update a user
-app.put("/users/:id", async function (req, res) {
+app.put("/users/:id", auth, async function (req, res) {
   try {
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
     if(!updatedUser) {
@@ -434,8 +613,29 @@ app.put("/users/:id", async function (req, res) {
   }
 });
 
+// UPDATE /users/acceptInvite - Add group to user
+app.put("/users/acceptInvite/:id", auth, async function (req, res) {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+      $push: { groups: req.body.groupId }
+    }, { new: true, runValidators: true, });
+    if(!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({
+      message: "User updated",
+      user: updatedUser,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error updating user");
+  }
+});
+
+
 // DELETE /delete - Delete a User
-app.delete("/users/:id", async function (req, res) {
+app.delete("/users/:id", auth, async function (req, res) {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if(!deletedUser) {
@@ -449,9 +649,22 @@ app.delete("/users/:id", async function (req, res) {
   }
 });
 
+// AUTH
+
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  res.json({ token });
+});
+
+
 // AI
 
-// POST /ai - test ai response to make tags
+// POST /ai - get AI response to make tags
 app.post("/ai", async function (req, res) {
   try {
     const response = await ai.models.generateContent({
@@ -460,6 +673,21 @@ app.post("/ai", async function (req, res) {
     });
     const tags = response.text.split(",").map(tag => tag.trim());
     return res.json({ response: response.text, tags: tags });
+  }
+  catch (e) {
+    console.error(e);
+    res.status(500).send("Error getting AI response");
+  }
+});
+
+// POST /ai/chat - get AI response for chat
+app.post("/ai/chat", async function (req, res) {
+  try {
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: "You are a helpful assistant in a calendar application. User: " + req.body.content
+    });
+    return res.json({ response: response.text });
   }
   catch (e) {
     console.error(e);
@@ -486,182 +714,4 @@ app.post("/notif", async function (req, res) {
     res.status(500).send("Error sending email");
   }
 
-});
-
-
-
-
-
-// GET /edit/:id - Show edit form
-app.get("/edit/:id", async function (req, res) {
-  try {
-    const postId = parseInt(req.params.id);
-    const post = await Post.findById(postId);
-
-    if (post) {
-      console.log("Edit page - Post found:", { data: post });
-      res.render("edit.ejs", { data: post });
-    } else {
-      console.log("Post not found");
-      res.status(404).send("Post not found");
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error fetching post for editing");
-  }
-});
-
-// PUT /edit - Update a post
-app.put("/edit", async function (req, res) {
-  try {
-    const postId = parseInt(req.body.id);
-
-    await Post.findByIdAndUpdate(postId, {
-      title: req.body.title,
-      date: req.body.date,
-    });
-
-    console.log("Update complete");
-    res.redirect("/list");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error updating post");
-  }
-});
-
-// API route - GET /listjson - Return posts as JSON
-app.get("/listjson", async function (req, res) {
-  try {
-    const posts = await Post.find({});
-    res.json(posts);
-  } catch (e) {
-    console.error(e);
-    res.status(500).send("Error fetching posts");
-  }
-});
-
-// API route - POST /users - Create a user document in Users collection
-app.post("/users", async function (req, res) {
-  try {
-    const { username, email, password } = req.body;
-
-    if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ error: "username, email, and password are required" });
-    }
-
-    const newUser = await User.create({
-      username: username.trim(),
-      email: email.toLowerCase(),
-      password: hashPassword(password),
-    });
-    return res.status(201).json({
-      message: "User created",
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-      },
-    });
-  } catch (error) {
-    if (error?.code === 11000) {
-      return res.status(409).json({ error: "Email already exists" });
-    }
-    console.error(error);
-    return res.status(500).json({ error: "Error creating user" });
-  }
-});
-
-// API route - POST /tasks - Create a task in Tasks collection
-app.post("/tasks", async function (req, res) {
-  try {
-    const { title, description, status, startDate, endDate, completedAt, assignedTo } =
-      req.body;
-
-    if (!title || !description || !startDate || !assignedTo) {
-      return res.status(400).json({
-        error: "title, description, startDate, and assignedTo are required",
-      });
-    }
-
-    const newTask = await Task.create({
-      title,
-      description,
-      status: status || "todo",
-      startDate,
-      endDate,
-      completedAt,
-      assignedTo,
-    });
-
-    return res.status(201).json({
-      message: "Task created",
-      task: newTask,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error creating task" });
-  }
-});
-
-// API route - GET /tasks - List all tasks
-app.get("/tasks", async function (req, res) {
-  try {
-    const tasks = await Task.find({}).sort({ createdAt: -1 });
-    return res.json(tasks);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error fetching tasks" });
-  }
-});
-
-// API route - GET /tasks/:id - Get one task by id
-app.get("/tasks/:id", async function (req, res) {
-  try {
-    const task = await Task.findById(req.params.id);
-    if (!task) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-    return res.json(task);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error fetching task" });
-  }
-});
-
-// API route - PUT /tasks/:id - Update one task by id
-app.put("/tasks/:id", async function (req, res) {
-  try {
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updatedTask) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-
-    return res.json({
-      message: "Task updated",
-      task: updatedTask,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error updating task" });
-  }
-});
-
-// API route - DELETE /tasks/:id - Delete one task by id
-app.delete("/tasks/:id", async function (req, res) {
-  try {
-    const deletedTask = await Task.findByIdAndDelete(req.params.id);
-    if (!deletedTask) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-    return res.json({ message: "Task deleted" });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Error deleting task" });
-  }
 });
