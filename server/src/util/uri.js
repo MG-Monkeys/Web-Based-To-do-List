@@ -3,11 +3,9 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config({
   quiet: true,
-  path: "C:\\Users\\dpber\\Documents\\School\\ASE285\\Web-Based-To-do-List\\.env",
+
+  path: [".env", "../.env"],
 });
-
-
-console.log(process.env);
 
 // Validate required variables
 const user = process.env.MONGO_USER;

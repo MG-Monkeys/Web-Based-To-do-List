@@ -130,13 +130,13 @@ function App() {
               color: colors.tertiaryText,
             }}
           >
-            New Task
+            <i className="fa-solid fa-plus" />
           </button>
           <p>This Week:</p>
           <TaskList tasks={tasks} onRemoveTask={removeTask} />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
-          <Calendar tasks={tasks} onRemoveTask={removeTask} />
+          <Calendar tasks={tasks} onRemoveTask={removeTask} Colors={colors} />
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}
