@@ -52,7 +52,6 @@ const ai = new GoogleGenAI({});
 const model = "gemini-2.5-flash"
 const filter = new Filter();
 
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -658,7 +657,7 @@ app.post('/auth/login', async (req, res) => {
 
 // AI
 
-// POST /ai - test ai response to make tags
+// POST /ai - get AI response to make tags
 app.post("/ai", async function (req, res) {
   try {
     const response = await ai.models.generateContent({
@@ -667,6 +666,21 @@ app.post("/ai", async function (req, res) {
     });
     const tags = response.text.split(",").map(tag => tag.trim());
     return res.json({ response: response.text, tags: tags });
+  }
+  catch (e) {
+    console.error(e);
+    res.status(500).send("Error getting AI response");
+  }
+});
+
+// POST /ai/chat - get AI response for chat
+app.post("/ai/chat", async function (req, res) {
+  try {
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: "You are a helpful assistant in a calendar application. User: " + req.body.content
+    });
+    return res.json({ response: response.text });
   }
   catch (e) {
     console.error(e);
