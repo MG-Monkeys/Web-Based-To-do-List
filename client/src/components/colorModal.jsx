@@ -100,7 +100,7 @@ export default function ColorModal({
               </tr>
             </tbody>
           </table>
-          <button type="button" className="modal-button" onClick={onClose}>
+          <button type="button" className="modal-button" onClick={onClose} style={{ backgroundColor: tertiaryColor}}>
             Close
           </button>
         </div>
