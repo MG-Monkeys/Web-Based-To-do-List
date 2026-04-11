@@ -24,10 +24,10 @@ export default function TaskModal({ isOpen, onClose, onAddTask, Colors }) {
       start,
       end,
       allDay: isAllDay,
-      description: formJson.description,
-      tags: tags,
+      extendedProps: {
+        description: formJson.description,
+      },
     };
-    console.log(newTask);
 
     setError("");
     setIsSubmitting(true);

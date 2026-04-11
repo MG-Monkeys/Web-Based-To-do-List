@@ -1,7 +1,12 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 
-export default function Calendar({ tasks, onRemoveTask, Colors }) {
+export default function Calendar({
+  tasks,
+  onRemoveTask,
+  Colors,
+  eventDidMount,
+}) {
   function handleEventClick(clickInfo) {
     if (
       window.confirm(
@@ -24,6 +29,7 @@ export default function Calendar({ tasks, onRemoveTask, Colors }) {
         initialView="dayGridMonth"
         events={tasks}
         eventClick={handleEventClick}
+        eventDidMount={eventDidMount}
       />
     </div>
   );

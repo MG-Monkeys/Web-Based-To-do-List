@@ -9,12 +9,13 @@ const taskSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
+      default: "",
     },
     tags: {
-        type: [String],
-        required: false
+      type: [String],
+      required: false,
     },
     status: {
       type: String,
@@ -44,14 +45,14 @@ const taskSchema = new mongoose.Schema(
       trim: true,
     },
     groupId: {
-        type: String,
-        required: true,
-        trim: true,
-    }
+      type: String,
+      required: true,
+      trim: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Task = mongoose.model("Task", taskSchema, "Tasks");

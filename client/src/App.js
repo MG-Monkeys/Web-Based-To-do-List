@@ -23,6 +23,39 @@ function App() {
     tertiaryText: "#0000000",
   });
 
+  const [tooltip, setTooltip] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    event: null,
+  });
+
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const TooltipBox = () => {
+    console.log(tooltip.event);
+    if (!tooltip.visible || !tooltip.event) return null;
+    const { title, start, end } = tooltip.event;
+
+    return (
+      <div
+        className="fc-tooltip"
+        style={{ top: tooltip.y + 12, left: tooltip.x + 12 }}
+      >
+        <strong>{title}</strong>
+        <span>
+          {formatTime(start)} - {formatTime(end)}
+        </span>
+        <span>{tooltip.event.extendedProps.description}</span>
+        <span>{tooltip.event.tags}</span>
+      </div>
+    );
+  };
+
   const handleColorChange = (key, value) => {
     setColors((prev) => ({ ...prev, [key]: value }));
   };
@@ -133,10 +166,50 @@ function App() {
             <i className="fa-solid fa-plus" />
           </button>
           <p>This Week:</p>
-          <TaskList tasks={tasks} onRemoveTask={removeTask} />
+          <TaskList
+            tasks={tasks}
+            onRemoveTask={removeTask}
+            eventDidMount={(info) => {
+              info.el.addEventListener("mouseenter", (e) => {
+                setTooltip({
+                  visible: true,
+                  x: e.clientX,
+                  y: e.clientY,
+                  event: info.event,
+                });
+              });
+              info.el.addEventListener("mousemove", (e) => {
+                setTooltip((prev) => ({ ...prev, x: e.clientX, y: e.clientY }));
+              });
+              info.el.addEventListener("mouseleave", () => {
+                setTooltip((prev) => ({ ...prev, visible: false }));
+              });
+            }}
+          />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
-          <Calendar tasks={tasks} onRemoveTask={removeTask} Colors={colors} />
+          <Calendar
+            tasks={tasks}
+            onRemoveTask={removeTask}
+            Colors={colors}
+            eventDidMount={(info) => {
+              info.el.addEventListener("mouseenter", (e) => {
+                setTooltip({
+                  visible: true,
+                  x: e.clientX,
+                  y: e.clientY,
+                  event: info.event,
+                });
+              });
+              info.el.addEventListener("mousemove", (e) => {
+                setTooltip((prev) => ({ ...prev, x: e.clientX, y: e.clientY }));
+              });
+              info.el.addEventListener("mouseleave", () => {
+                setTooltip((prev) => ({ ...prev, visible: false }));
+              });
+            }}
+          />
+          <TooltipBox />
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}

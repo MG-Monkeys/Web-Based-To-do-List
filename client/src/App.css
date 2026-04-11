@@ -61,6 +61,7 @@
 .sidebar {
   padding: 1%;
   width: 15%;
+  min-width: 150px;
   background-color: #dedefd;
   display: flex;
   flex-direction: column;
@@ -182,4 +183,20 @@ td {
   text-align: center;
   vertical-align: middle;
   font-size: x-large;
+}
+
+.fc-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+  max-width: 240px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
