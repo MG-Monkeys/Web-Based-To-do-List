@@ -215,3 +215,27 @@ td {
 .group-list {
   height: auto;
 }
+
+.asst-message,
+.user-message {
+  max-width: 70%;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  clear: both;
+}
+
+.asst-message {
+  background-color: lightgrey;
+  float: left;
+}
+
+.user-message {
+  background-color: lightblue;
+  float: right;
+}
+
+.chat-message-box {
+  height: 90%;
+}

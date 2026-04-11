@@ -7,6 +7,7 @@ import TaskList from "./components/list";
 import LoginModal from "./components/loginModal";
 import ColorModal from "./components/colorModal";
 import GroupList from "./components/groupList";
+import Chat from "./components/chat";
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -66,6 +67,11 @@ function App() {
     { id: 2, name: "grup2" },
     { id: 3, name: "grup3" },
   ];
+
+  const [chatList, setChatList] = useState([
+    { from: "assistant", message: "How can I help you?" },
+    { from: "user", message: "I don't know" },
+  ]);
 
   function toCalendarTask(task) {
     return {
@@ -242,6 +248,7 @@ function App() {
             secondaryText={colors.secondaryText}
             tertiaryText={colors.tertiaryText}
           />
+          <Chat chatList={chatList} setChatList={setChatList} />
         </div>
       </div>
     </div>
