@@ -6,6 +6,7 @@ import TaskModal from "./components/taskModal";
 import TaskList from "./components/list";
 import LoginModal from "./components/loginModal";
 import ColorModal from "./components/colorModal";
+import GroupList from "./components/groupList";
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -59,6 +60,12 @@ function App() {
   const handleColorChange = (key, value) => {
     setColors((prev) => ({ ...prev, [key]: value }));
   };
+
+  const groupList = [
+    { id: 1, name: "grup1" },
+    { id: 2, name: "grup2" },
+    { id: 3, name: "grup3" },
+  ];
 
   function toCalendarTask(task) {
     return {
@@ -186,6 +193,8 @@ function App() {
               });
             }}
           />
+          <div className="sidebar-spacer" />
+          <GroupList groupList={groupList} />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar

@@ -20,6 +20,7 @@ export default function TaskList({ tasks, onRemoveTask, eventDidMount }) {
       events={tasks}
       eventClick={handleEventClick}
       eventDidMount={eventDidMount}
+      height="auto"
     />
   );
 }
