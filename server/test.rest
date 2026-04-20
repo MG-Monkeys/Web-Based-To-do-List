@@ -18,7 +18,7 @@ Content-Type: application/json
 
 {
   "username": "TestUser01",
-  "email": "Test@example.com",
+  "email": "Test2@example.com",
   "password": "P@ssw0rd123"
 }
 
@@ -27,7 +27,7 @@ POST {{baseUrl}}/auth/Login
 Content-Type: application/json
 
 {
-  "email": "Test@example.com",
+  "email": "Test2@example.com",
   "password": "P@ssw0rd123"
 }
 
