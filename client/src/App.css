@@ -76,12 +76,26 @@
   }
 }
 
+.fc-list-event-time,
+.fc-list-day {
+  display: none !important;
+}
+
 .main-content {
   height: 100vh;
   width: 100%;
   justify-content: center;
   padding: 1%;
   margin-bottom: 3%;
+}
+
+.fc-list-table {
+  text-align: center;
+}
+
+.fc-list-table td,
+.fc-list-table th {
+  border: none !important;
 }
 
 .fc-listWeek-view,
@@ -202,7 +216,7 @@ td {
 }
 
 .sidebar-spacer {
-  height: 10%;
+  height: 5%;
 }
 
 .group-item {

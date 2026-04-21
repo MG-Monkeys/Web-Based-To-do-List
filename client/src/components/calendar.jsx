@@ -6,15 +6,22 @@ export default function Calendar({
   onRemoveTask,
   Colors,
   eventDidMount,
+  openTaskModal,
 }) {
   function handleEventClick(clickInfo) {
-    if (
-      window.confirm(
-        `Are you sure you want to delete the event '${clickInfo.event.title}'`,
-      )
-    ) {
-      onRemoveTask(clickInfo.event.id);
-    }
+    const event = clickInfo.event;
+    openTaskModal({
+      title: event.title,
+      start: event.start,
+      date: event.startStr?.split("T")[0],
+      startTime: event.startStr?.split("T")[1]?.slice(0, 5),
+      endTime: event.endStr?.split("T")[1]?.slice(0, 5),
+      allDay: event.allDay,
+      repeat: event.extendedProps.repeat,
+      description: event.extendedProps.description,
+      tags: event.extendedProps.tags,
+      completed: event.extendedProps.completed,
+    });
   }
 
   return (
@@ -30,6 +37,7 @@ export default function Calendar({
         events={tasks}
         eventClick={handleEventClick}
         eventDidMount={eventDidMount}
+        onRemoveTask={onRemoveTask}
       />
     </div>
   );

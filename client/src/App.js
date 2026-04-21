@@ -53,7 +53,7 @@ function App() {
           {formatTime(start)} - {formatTime(end)}
         </span>
         <span>{tooltip.event.extendedProps.description}</span>
-        <span>{tooltip.event.tags}</span>
+        <span>{tooltip.event.extendedProps.tags}</span>
       </div>
     );
   };
@@ -73,14 +73,33 @@ function App() {
     { from: "user", message: "I don't know" },
   ]);
 
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const [taskData, setTaskData] = useState({
+    title: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    repeat: "",
+    allDay: false,
+    description: "",
+    completed: false,
+    tags: "",
+  });
+
   function toCalendarTask(task) {
     return {
       id: task._id,
       title: task.title,
       start: task.startDate,
       end: task.endDate,
-      allDay: false,
-      description: task.description,
+      allDay: task.allDay,
+      extendedProps: {
+        description: task.description,
+        tags: task.tags,
+        completed: task.completed,
+        repeat: task.repeat,
+      },
     };
   }
 
@@ -110,12 +129,18 @@ function App() {
     const assignedTo = authUser?.email || "guest@local";
     const payload = {
       title: newTask.title,
-      description: newTask.description || "",
+      description: newTask.extendedProps?.description,
+      tags: newTask.extendedProps?.tags,
       startDate: newTask.start,
       endDate: newTask.end,
+      allDay: newTask.allDay,
+      repeat: newTask.extendedProps?.repeat,
+      completed: newTask.extendedProps?.completed,
       assignedTo,
       groupId: "0",
     };
+
+    console.log("PAYLOAD: " + JSON.stringify(payload));
 
     const response = await fetch("/tasks", {
       method: "POST",
@@ -135,7 +160,19 @@ function App() {
     setTasks(tasks.filter((task) => task.id !== taskId));
   };
 
-  const openTaskModal = () => {
+  const openTaskModal = (eventInfo = null) => {
+    setSelectedTask(eventInfo);
+    setTaskData({
+      title: eventInfo?.title || "",
+      date: eventInfo?.date || "",
+      startTime: eventInfo?.startTime || "",
+      endTime: eventInfo?.endTime || "",
+      allDay: eventInfo?.allDay ?? false,
+      repeat: eventInfo?.repeat || "none",
+      completed: eventInfo?.completed ?? false,
+      description: eventInfo?.description || "",
+      tags: eventInfo?.tags || [],
+    });
     setIsTaskModalOpen(true);
   };
 
@@ -178,7 +215,8 @@ function App() {
           >
             <i className="fa-solid fa-plus" />
           </button>
-          <p>This Week:</p>
+          <div className="sidebar-spacer" />
+          <h5>This Week:</h5>
           <TaskList
             tasks={tasks}
             onRemoveTask={removeTask}
@@ -223,6 +261,7 @@ function App() {
                 setTooltip((prev) => ({ ...prev, visible: false }));
               });
             }}
+            openTaskModal={openTaskModal}
           />
           <TooltipBox />
           <TaskModal
@@ -230,6 +269,9 @@ function App() {
             onClose={closeTaskModal}
             onAddTask={addTask}
             Colors={colors}
+            OnRemoveTask={removeTask}
+            taskData={taskData}
+            setTaskData={setTaskData}
           />
           <LoginModal
             isOpen={isLoginModalOpen}

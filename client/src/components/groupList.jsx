@@ -1,7 +1,7 @@
 export default function GroupList({ groupList }) {
   return (
     <div className="group-list">
-      <h3>Groups</h3>
+      <h5>Groups</h5>
       {groupList.map((group) => (
         <div key={group.id} className="group-item">
           <label>
