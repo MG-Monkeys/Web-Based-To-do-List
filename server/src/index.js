@@ -569,7 +569,7 @@ app.get("/users/:id", async function (req, res) {
 });
 
 // POST /users - Add new user
-app.post("/users", async function (req, res) {
+app.post("/users/signup", async function (req, res) {
   try {
     const { username, email, password } = req.body;
 
