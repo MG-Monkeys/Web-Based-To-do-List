@@ -67,6 +67,7 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
             className="modal-button"
             onClick={() => setMode("login")}
             disabled={isSubmitting}
+            style={{ backgroundColor: Colors.tertiary }}
           >
             Log In
           </button>
@@ -75,6 +76,7 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
             className="modal-button"
             onClick={() => setMode("signup")}
             disabled={isSubmitting}
+            style={{ backgroundColor: Colors.tertiary }}
           >
             Sign Up
           </button>
@@ -83,7 +85,12 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
           {mode === "signup" ? (
             <label>
               Username:
-              <input type="text" placeholder="username" name="username" required />
+              <input
+                type="text"
+                placeholder="username"
+                name="username"
+                required
+              />
             </label>
           ) : null}
           <label>
@@ -108,18 +115,24 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
             <p className={`auth-message ${status.type}`}>{status.message}</p>
           ) : null}
           <div>
-            <button type="submit" className="modal-button" disabled={isSubmitting}>
+            <button
+              type="submit"
+              className="modal-button"
+              disabled={isSubmitting}
+              style={{ backgroundColor: Colors.tertiary }}
+            >
               {isSubmitting
                 ? "Please wait..."
                 : mode === "signup"
-                ? "Create Account"
-                : "Log In"}
+                  ? "Create Account"
+                  : "Log In"}
             </button>
             <button
               type="button"
               className="modal-button"
               onClick={onClose}
               disabled={isSubmitting}
+              style={{ backgroundColor: Colors.tertiary }}
             >
               Cancel
             </button>

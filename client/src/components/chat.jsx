@@ -1,13 +1,20 @@
 import { useState } from "react";
 
-export default function Assistant({ chatList, setChatList }) {
+export default function Assistant({ chatList, Colors, setChatList }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
     setChatList([...chatList, { from: "user", message: inputValue }]);
     setInputValue("");
+    const response = await fetch("/ai/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chatList),
+    });
+    const data = await response.json();
+    setChatList([...chatList, { from: "assistant", message: data }]);
   };
 
   return (
@@ -66,6 +73,7 @@ export default function Assistant({ chatList, setChatList }) {
           cursor: "pointer",
           boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
           zIndex: 1000,
+          backgroundColor: Colors.tertiary,
         }}
       >
         {isOpen ? "✕" : "💬"}

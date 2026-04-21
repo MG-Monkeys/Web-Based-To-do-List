@@ -290,7 +290,7 @@ function App() {
             secondaryText={colors.secondaryText}
             tertiaryText={colors.tertiaryText}
           />
-          <Chat chatList={chatList} setChatList={setChatList} />
+          <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />
         </div>
       </div>
     </div>
