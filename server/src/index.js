@@ -561,7 +561,8 @@ app.get("/users/:id", async function (req, res) {
       username: user.username,
       email: user.email,
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error fetching users: ", error);
     res.status(500).json({ error: "Error fetching users" });
   }
@@ -718,4 +719,5 @@ app.post("/notif", async function (req, res) {
     console.error(e);
     res.status(500).send("Error sending email");
   }
+
 });

@@ -31,3 +31,4 @@ const uri = `mongodb+srv://${encodedUser}:${encodedPassword}@${normalizedCluster
 
 // Export the URI
 export default uri;
+
