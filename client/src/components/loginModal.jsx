@@ -15,7 +15,7 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
     setStatus({ type: "", message: "" });
     setIsSubmitting(true);
 
-    const endpoint = mode === "signup" ? "/auth/signup" : "/auth/login";
+    const endpoint = mode === "signup" ? "/users/signup" : "/auth/login";
     const payload =
       mode === "signup"
         ? {
