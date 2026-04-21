@@ -9,8 +9,9 @@ const taskSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
+      default: "",
     },
     status: {
       type: String,
@@ -38,7 +39,7 @@ const taskSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Task = mongoose.model("Task", taskSchema, "Tasks");

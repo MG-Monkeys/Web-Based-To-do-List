@@ -22,19 +22,18 @@ import jwt from 'jsonwebtoken';
 const salt = await bcrypt.genSalt(10);
 
 const transporter = nodemailer.createTransport({
-      // host: "smtp.ethereal.email",
-      // port: 587,
-      // secure: false, // Use true for port 465, false for port 587
-      // 
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-          user: "monkeyseemonkeydo33333@gmail.com",
-          pass: process.env.MSMD_EMAIL_PASS,
-      },
+  // host: "smtp.ethereal.email",
+  // port: 587,
+  // secure: false, // Use true for port 465, false for port 587
+  //
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "monkeyseemonkeydo33333@gmail.com",
+    pass: process.env.MSMD_EMAIL_PASS,
+  },
 });
-
 
 dotenv.config();
 
@@ -82,7 +81,7 @@ app.listen(5500, function () {
 
 // Routes
 
-// GET / - 
+// GET / -
 app.get("/", function (req, res) {
   res.send("API is running");
 });
@@ -246,7 +245,7 @@ app.post("/tasks", auth, async function (req, res) {
       });
     }
 
-    if(filter.isProfane(title) || filter.isProfane(description)) {
+    if (filter.isProfane(title) || filter.isProfane(description)) {
       return res.status(400).json({
         error: "Profanity detected in title or description",
       });
@@ -255,7 +254,7 @@ app.post("/tasks", auth, async function (req, res) {
     const newTask = await Task.create({
       title,
       description: description ?? "",
-      tags, 
+      tags,
       startDate,
       endDate,
       editedAt: startDate,
@@ -271,15 +270,18 @@ app.post("/tasks", auth, async function (req, res) {
     });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Error adding task");
+    res.status(500).send({ error: "Error adding task" });
   }
 });
 
 // UPDATE /tasks/:id - Update a task
 app.put("/tasks/:id", auth, async function (req, res) {
   try {
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
-    if(!updatedTask) {
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updatedTask) {
       return res.status(404).json({ error: "Task not found" });
     }
 
@@ -332,7 +334,7 @@ app.put("/tasks/completed/:id", auth, async function (req, res) {
 app.delete("/tasks/:id", auth, async function (req, res) {
   try {
     const deletedTask = await Task.findByIdAndDelete(req.params.id);
-    if(!deletedTask) {
+    if (!deletedTask) {
       return res.status(404).json({ error: "Task not found" });
     }
 
@@ -411,7 +413,7 @@ app.post("/invites/delete/:id", auth, async function (req, res) {
 app.get("/tags", async function (req, res) {
   try {
     const tags = await Tag.find({});
-    if(!tags || tags.length === 0) {
+    if (!tags || tags.length === 0) {
       return res.status(404).json({ error: "Tags not found" });
     }
     return res.json(tags);
@@ -440,19 +442,19 @@ app.get("/tags/:id", async function (req, res) {
 app.post("/tags", auth, async function (req, res) {
   try {
     // Check if tag already exists
-    const tag = await Tag.find({tagName: req.body.tagName});
+    const tag = await Tag.find({ tagName: req.body.tagName });
     if (tag && tag.length > 0) {
       return res.json({ message: "Tag already exists", tag: tag[0] });
     }
 
-    if(filter.isProfane(req.body.tagName)) {
+    if (filter.isProfane(req.body.tagName)) {
       return res.status(400).json({
         error: "Profanity detected in tag name",
       });
     }
 
     // create the tag otherwise
-    const newTag = await Tag.create({tagName: req.body.tagName});
+    const newTag = await Tag.create({ tagName: req.body.tagName });
     return res.status(201).json({
       message: "Tag created",
       tag: newTag,
@@ -467,7 +469,7 @@ app.post("/tags", auth, async function (req, res) {
 app.delete("/tags/:id", auth, async function (req, res) {
   try {
     const deletedTag = await Tag.findByIdAndDelete(req.params.id);
-    if(!deletedTag) {
+    if (!deletedTag) {
       return res.status(404).json({ error: "Tag not found" });
     }
 
@@ -598,8 +600,11 @@ app.post("/users", async function (req, res) {
 // UPDATE /users/:id - Update a user
 app.put("/users/:id", auth, async function (req, res) {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, });
-    if(!updatedUser) {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -638,7 +643,7 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
 app.delete("/users/:id", auth, async function (req, res) {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
-    if(!deletedUser) {
+    if (!deletedUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -669,12 +674,15 @@ app.post("/ai", async function (req, res) {
   try {
     const response = await ai.models.generateContent({
       model: model,
-      contents: "Respond only with 1-3, comma separated, 1 word tags for a task with this title and description: " + req.body.title + " " + req.body.description
+      contents:
+        "Respond only with 1-3, comma separated, 1 word tags for a task with this title and description: " +
+        req.body.title +
+        " " +
+        req.body.description,
     });
-    const tags = response.text.split(",").map(tag => tag.trim());
+    const tags = response.text.split(",").map((tag) => tag.trim());
     return res.json({ response: response.text, tags: tags });
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
     res.status(500).send("Error getting AI response");
   }
