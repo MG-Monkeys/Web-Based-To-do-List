@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    groups: {
+      type: [String],
+      required: false,
+    }
   },
   {
     timestamps: true,

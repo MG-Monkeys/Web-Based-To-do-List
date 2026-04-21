@@ -50,3 +50,6 @@ temp/
 # Package managers
 package-lock.json
 yarn.lock
+
+# Has an absolute path to my .env file
+server/src/util/uri.js
