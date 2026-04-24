@@ -566,6 +566,23 @@ app.get("/users/:id", async function (req, res) {
   }
 });
 
+// GET /users/groups/:id - Get a user's groups by id
+app.get("/users/groups/:id", async function (req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({
+      groups: user.groups,
+    });
+  }
+  catch (error) {
+    console.error("Error fetching users: ", error);
+    res.status(500).json({ error: "Error fetching users" });
+  }
+});
+
 // POST /users/signup - Add new user
 app.post("/users/signup", async function (req, res) {
   try {
