@@ -45,6 +45,7 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
         message: mode === "signup" ? "Account created." : "Logged in.",
       });
       onAuthSuccess(data.user);
+      console.log(data.user);
       onClose();
     } catch (error) {
       setStatus({ type: "error", message: error.message });
@@ -60,27 +61,39 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
         onClick={(e) => e.stopPropagation()}
         style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
       >
-        <p>{mode === "signup" ? "Sign Up" : "Log In"}</p>
-        <div className="auth-toggle-row">
-          <button
-            type="button"
-            className="modal-button"
-            onClick={() => setMode("login")}
-            disabled={isSubmitting}
-            style={{ backgroundColor: Colors.tertiary }}
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            className="modal-button"
-            onClick={() => setMode("signup")}
-            disabled={isSubmitting}
-            style={{ backgroundColor: Colors.tertiary }}
-          >
+        {mode === "signup" ? (
+          <>
             Sign Up
-          </button>
-        </div>
+            <div className="auth-toggle-row">
+              Already have an account?
+              <button
+                type="button"
+                className="modal-button"
+                onClick={() => setMode("login")}
+                disabled={isSubmitting}
+                style={{ backgroundColor: Colors.tertiary }}
+              >
+                Log In
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            Log In
+            <div className="auth-toggle-row">
+              Don't have an account?
+              <button
+                type="button"
+                className="modal-button"
+                onClick={() => setMode("signup")}
+                disabled={isSubmitting}
+                style={{ backgroundColor: Colors.tertiary }}
+              >
+                Sign Up
+              </button>
+            </div>
+          </>
+        )}
         <form onSubmit={handleSubmit}>
           {mode === "signup" ? (
             <label>

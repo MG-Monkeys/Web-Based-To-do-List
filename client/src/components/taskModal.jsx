@@ -1,13 +1,16 @@
 import { useState } from "react";
 import getFormattedDate from "../utils/getFormattedDate";
+import { deleteTask } from "../utils/eventUtil";
 
 export default function TaskModal({
   isOpen,
   onClose,
-  onAddTask,
-  onRemoveTask,
+  setTasks,
+  toCalendarTask,
+  authUser,
   Colors,
   taskData,
+  onAddTask,
   setTaskData,
 }) {
   const [error, setError] = useState("");
@@ -19,11 +22,13 @@ export default function TaskModal({
     e.preventDefault();
     const formData = new FormData(e.target);
     const formJson = Object.fromEntries(formData.entries());
+    console.log("AAAAAALLLLLLDAYYYYYYY", formJson.allDay);
 
     const date = formJson.date;
     const startTime = formJson.startTime || "09:00";
     const endTime = formJson.endTime || "10:00";
-    const isAllDay = formJson.allDay ?? false;
+    const isAllDay = formJson.allDay === "on";
+    console.log("ISALLDAY", isAllDay, typeof isAllDay);
     const start = isAllDay ? `${date}T00:00` : `${date}T${startTime}`;
     const end = isAllDay ? `${date}T23:59` : `${date}T${endTime}`;
     const tags = formJson.tags.split(",");
@@ -37,13 +42,14 @@ export default function TaskModal({
         description: formJson.description,
         tags: tags,
         completed: completed,
+        reoccurrence: formJson.reoccurrence,
       },
     };
 
     setError("");
     setIsSubmitting(true);
     try {
-      await onAddTask(newTask);
+      const task = await onAddTask(newTask);
       onClose();
     } catch (submitError) {
       setError(submitError.message);
@@ -52,7 +58,7 @@ export default function TaskModal({
     }
   }
 
-  const isEditing = !!taskData.title;
+  const isEditing = !!taskData.id;
   console.log(taskData);
 
   return (
@@ -145,10 +151,10 @@ export default function TaskModal({
           <label>
             Repeat?
             <select
-              name="repeat"
-              value={taskData.repeat || "none"}
+              name="reoccurrence"
+              value={taskData.reoccurrence || "none"}
               onChange={(e) =>
-                setTaskData({ ...taskData, repeat: e.target.value })
+                setTaskData({ ...taskData, reoccurrence: e.target.value })
               }
             >
               <option value="none">None</option>
@@ -215,7 +221,7 @@ export default function TaskModal({
                 type="button"
                 className="modal-button"
                 onClick={() => {
-                  onRemoveTask(taskData.id);
+                  deleteTask(taskData.id);
                   onClose();
                 }}
               >

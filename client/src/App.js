@@ -8,6 +8,8 @@ import LoginModal from "./components/loginModal";
 import ColorModal from "./components/colorModal";
 import GroupList from "./components/groupList";
 import Chat from "./components/chat";
+import GroupModal from "./components/groupModal";
+import { deleteTask } from "./utils/eventUtil";
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -15,6 +17,7 @@ function App() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
   const [colors, setColors] = useState({
     primary: "#fefeff",
@@ -62,30 +65,25 @@ function App() {
     setColors((prev) => ({ ...prev, [key]: value }));
   };
 
-  const groupList = [
-    { id: 1, name: "grup1" },
-    { id: 2, name: "grup2" },
-    { id: 3, name: "grup3" },
-  ];
-
   const [chatList, setChatList] = useState([
     { from: "assistant", message: "How can I help you?" },
-    { from: "user", message: "I don't know" },
   ]);
-
-  const [selectedTask, setSelectedTask] = useState(null);
 
   const [taskData, setTaskData] = useState({
     title: "",
     date: "",
     startTime: "",
     endTime: "",
-    repeat: "",
+    reoccurrence: "",
     allDay: false,
     description: "",
     completed: false,
     tags: "",
   });
+
+  const openGroupModal = () => {
+    setIsGroupModalOpen(true);
+  };
 
   function toCalendarTask(task) {
     return {
@@ -98,10 +96,40 @@ function App() {
         description: task.description,
         tags: task.tags,
         completed: task.completed,
-        repeat: task.repeat,
+        reoccurrence: task.reoccurrence,
       },
     };
   }
+
+  const addTask = async (newTask) => {
+    const assignedTo = authUser?.email || "guest@local";
+    const payload = {
+      title: newTask.title,
+      description: newTask.extendedProps?.description,
+      tags: newTask.extendedProps?.tags,
+      startDate: newTask.start,
+      endDate: newTask.end,
+      allDay: newTask.allDay,
+      reoccurrence: newTask.extendedProps?.reoccurrence,
+      completed: newTask.extendedProps?.completed,
+      assignedTo,
+      groupId: "0",
+    };
+
+    console.log("PAYLOAD: " + JSON.stringify(payload));
+
+    const response = await fetch("/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Failed to create task");
+    }
+    setTasks((prev) => [...prev, toCalendarTask(data.task)]);
+  };
 
   useEffect(() => {
     async function fetchTasks() {
@@ -125,50 +153,14 @@ function App() {
     fetchTasks();
   }, []);
 
-  const addTask = async (newTask) => {
-    const assignedTo = authUser?.email || "guest@local";
-    const payload = {
-      title: newTask.title,
-      description: newTask.extendedProps?.description,
-      tags: newTask.extendedProps?.tags,
-      startDate: newTask.start,
-      endDate: newTask.end,
-      allDay: newTask.allDay,
-      repeat: newTask.extendedProps?.repeat,
-      completed: newTask.extendedProps?.completed,
-      assignedTo,
-      groupId: "0",
-    };
-
-    console.log("PAYLOAD: " + JSON.stringify(payload));
-
-    const response = await fetch("/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data?.error || "Failed to create task");
-    }
-
-    setTasks((prevTasks) => [...prevTasks, toCalendarTask(data.task)]);
-  };
-
-  const removeTask = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
-  };
-
   const openTaskModal = (eventInfo = null) => {
-    setSelectedTask(eventInfo);
     setTaskData({
       title: eventInfo?.title || "",
       date: eventInfo?.date || "",
       startTime: eventInfo?.startTime || "",
       endTime: eventInfo?.endTime || "",
       allDay: eventInfo?.allDay ?? false,
-      repeat: eventInfo?.repeat || "none",
+      reoccurrence: eventInfo?.reoccurrence || "none",
       completed: eventInfo?.completed ?? false,
       description: eventInfo?.description || "",
       tags: eventInfo?.tags || [],
@@ -186,6 +178,10 @@ function App() {
 
   const closeColorModal = () => {
     setIsColorModalOpen(false);
+  };
+
+  const closeGroupModal = () => {
+    setIsGroupModalOpen(false);
   };
 
   return (
@@ -219,7 +215,7 @@ function App() {
           <h5>This Week:</h5>
           <TaskList
             tasks={tasks}
-            onRemoveTask={removeTask}
+            openTaskModal={openTaskModal}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
                 setTooltip({
@@ -238,12 +234,22 @@ function App() {
             }}
           />
           <div className="sidebar-spacer" />
-          <GroupList groupList={groupList} />
+          <button
+            onClick={openGroupModal}
+            className="task-button"
+            disabled={!authUser}
+            style={{
+              backgroundColor: colors.tertiary,
+              color: colors.tertiaryText,
+            }}
+          >
+            <i className="fa-solid fa-plus" />
+          </button>
+          <GroupList User={authUser} />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar
             tasks={tasks}
-            onRemoveTask={removeTask}
             Colors={colors}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
@@ -267,11 +273,13 @@ function App() {
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}
-            onAddTask={addTask}
             Colors={colors}
-            OnRemoveTask={removeTask}
+            OnRemoveTask={deleteTask}
             taskData={taskData}
+            onAddTask={addTask}
             setTaskData={setTaskData}
+            authUser={authUser}
+            toCalendarTask={toCalendarTask}
           />
           <LoginModal
             isOpen={isLoginModalOpen}
@@ -289,6 +297,11 @@ function App() {
             primaryText={colors.primaryText}
             secondaryText={colors.secondaryText}
             tertiaryText={colors.tertiaryText}
+          />
+          <GroupModal
+            isOpen={isGroupModalOpen}
+            onClose={closeGroupModal}
+            Colors={colors}
           />
           <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />
         </div>
