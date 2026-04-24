@@ -15,6 +15,9 @@ GET {{baseUrl}}/users/69c9f7cb450c1ed342fd087a
 ### GET USER'S GROUPS
 GET {{baseUrl}}/users/groups/69c9f7cb450c1ed342fd087a
 
+### GET USER'S USERNAME
+GET {{baseUrl}}/users/username/TestUser01
+
 ### CREATE USER (mock)
 POST {{baseUrl}}/users/signup
 Content-Type: application/json
