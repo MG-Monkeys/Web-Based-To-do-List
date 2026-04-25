@@ -6,6 +6,8 @@ import TaskModal from "./components/taskModal";
 import TaskList from "./components/list";
 import LoginModal from "./components/loginModal";
 import ColorModal from "./components/colorModal";
+import GroupList from "./components/groupList";
+import Chat from "./components/chat";
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -23,9 +25,67 @@ function App() {
     tertiaryText: "#0000000",
   });
 
+  const [tooltip, setTooltip] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    event: null,
+  });
+
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const TooltipBox = () => {
+    console.log(tooltip.event);
+    if (!tooltip.visible || !tooltip.event) return null;
+    const { title, start, end } = tooltip.event;
+
+    return (
+      <div
+        className="fc-tooltip"
+        style={{ top: tooltip.y + 12, left: tooltip.x + 12 }}
+      >
+        <strong>{title}</strong>
+        <span>
+          {formatTime(start)} - {formatTime(end)}
+        </span>
+        <span>{tooltip.event.extendedProps.description}</span>
+        <span>{tooltip.event.extendedProps.tags}</span>
+      </div>
+    );
+  };
+
   const handleColorChange = (key, value) => {
     setColors((prev) => ({ ...prev, [key]: value }));
   };
+
+  const groupList = [
+    { id: 1, name: "grup1" },
+    { id: 2, name: "grup2" },
+    { id: 3, name: "grup3" },
+  ];
+
+  const [chatList, setChatList] = useState([
+    { from: "assistant", message: "How can I help you?" },
+    { from: "user", message: "I don't know" },
+  ]);
+
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const [taskData, setTaskData] = useState({
+    title: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    repeat: "",
+    allDay: false,
+    description: "",
+    completed: false,
+    tags: "",
+  });
 
   function toCalendarTask(task) {
     return {
@@ -33,8 +93,13 @@ function App() {
       title: task.title,
       start: task.startDate,
       end: task.endDate,
-      allDay: false,
-      description: task.description,
+      allDay: task.allDay,
+      extendedProps: {
+        description: task.description,
+        tags: task.tags,
+        completed: task.completed,
+        repeat: task.repeat,
+      },
     };
   }
 
@@ -64,12 +129,18 @@ function App() {
     const assignedTo = authUser?.email || "guest@local";
     const payload = {
       title: newTask.title,
-      description: newTask.description || "",
+      description: newTask.extendedProps?.description,
+      tags: newTask.extendedProps?.tags,
       startDate: newTask.start,
       endDate: newTask.end,
+      allDay: newTask.allDay,
+      repeat: newTask.extendedProps?.repeat,
+      completed: newTask.extendedProps?.completed,
       assignedTo,
       groupId: "0",
     };
+
+    console.log("PAYLOAD: " + JSON.stringify(payload));
 
     const response = await fetch("/tasks", {
       method: "POST",
@@ -89,7 +160,19 @@ function App() {
     setTasks(tasks.filter((task) => task.id !== taskId));
   };
 
-  const openTaskModal = () => {
+  const openTaskModal = (eventInfo = null) => {
+    setSelectedTask(eventInfo);
+    setTaskData({
+      title: eventInfo?.title || "",
+      date: eventInfo?.date || "",
+      startTime: eventInfo?.startTime || "",
+      endTime: eventInfo?.endTime || "",
+      allDay: eventInfo?.allDay ?? false,
+      repeat: eventInfo?.repeat || "none",
+      completed: eventInfo?.completed ?? false,
+      description: eventInfo?.description || "",
+      tags: eventInfo?.tags || [],
+    });
     setIsTaskModalOpen(true);
   };
 
@@ -132,16 +215,63 @@ function App() {
           >
             <i className="fa-solid fa-plus" />
           </button>
-          <p>This Week:</p>
-          <TaskList tasks={tasks} onRemoveTask={removeTask} />
+          <div className="sidebar-spacer" />
+          <h5>This Week:</h5>
+          <TaskList
+            tasks={tasks}
+            onRemoveTask={removeTask}
+            eventDidMount={(info) => {
+              info.el.addEventListener("mouseenter", (e) => {
+                setTooltip({
+                  visible: true,
+                  x: e.clientX,
+                  y: e.clientY,
+                  event: info.event,
+                });
+              });
+              info.el.addEventListener("mousemove", (e) => {
+                setTooltip((prev) => ({ ...prev, x: e.clientX, y: e.clientY }));
+              });
+              info.el.addEventListener("mouseleave", () => {
+                setTooltip((prev) => ({ ...prev, visible: false }));
+              });
+            }}
+          />
+          <div className="sidebar-spacer" />
+          <GroupList groupList={groupList} />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
-          <Calendar tasks={tasks} onRemoveTask={removeTask} Colors={colors} />
+          <Calendar
+            tasks={tasks}
+            onRemoveTask={removeTask}
+            Colors={colors}
+            eventDidMount={(info) => {
+              info.el.addEventListener("mouseenter", (e) => {
+                setTooltip({
+                  visible: true,
+                  x: e.clientX,
+                  y: e.clientY,
+                  event: info.event,
+                });
+              });
+              info.el.addEventListener("mousemove", (e) => {
+                setTooltip((prev) => ({ ...prev, x: e.clientX, y: e.clientY }));
+              });
+              info.el.addEventListener("mouseleave", () => {
+                setTooltip((prev) => ({ ...prev, visible: false }));
+              });
+            }}
+            openTaskModal={openTaskModal}
+          />
+          <TooltipBox />
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}
             onAddTask={addTask}
             Colors={colors}
+            OnRemoveTask={removeTask}
+            taskData={taskData}
+            setTaskData={setTaskData}
           />
           <LoginModal
             isOpen={isLoginModalOpen}
@@ -160,6 +290,7 @@ function App() {
             secondaryText={colors.secondaryText}
             tertiaryText={colors.tertiaryText}
           />
+          <Chat chatList={chatList} setChatList={setChatList} />
         </div>
       </div>
     </div>

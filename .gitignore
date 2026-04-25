@@ -48,5 +48,4 @@ temp/
 *.tmp
 
 # Package managers
-package-lock.json
 yarn.lock
