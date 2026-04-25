@@ -28,7 +28,6 @@ export default function TaskModal({
     const startTime = formJson.startTime || "09:00";
     const endTime = formJson.endTime || "10:00";
     const isAllDay = formJson.allDay === "on";
-    console.log("ISALLDAY", isAllDay, typeof isAllDay);
     const start = isAllDay ? `${date}T00:00` : `${date}T${startTime}`;
     const end = isAllDay ? `${date}T23:59` : `${date}T${endTime}`;
     const tags = formJson.tags.split(",");

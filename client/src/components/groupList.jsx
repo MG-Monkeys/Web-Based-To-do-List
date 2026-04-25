@@ -9,14 +9,17 @@ export default function GroupList({ User }) {
     }
 
     async function getGroups() {
-      const response = await fetch(`/users/groups/${User.id}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch groups");
+      try {
+        const response = await fetch(`/users/groups/${User.id}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch groups");
+        }
+        const data = await response.json();
+        setGroupList(data.groups);
+      } catch (e) {
+        console.error(e);
       }
-      const data = await response.json();
-      setGroupList(data.groups);
     }
-
     getGroups();
   }, [User]);
 

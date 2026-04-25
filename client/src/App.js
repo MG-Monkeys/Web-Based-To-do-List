@@ -86,12 +86,19 @@ function App() {
   };
 
   function toCalendarTask(task) {
+    const start = new Date(task.startDate);
+    const end = new Date(task.endDate);
+    const isAllDay =
+      start.getHours() === 0 &&
+      start.getMinutes() === 0 &&
+      end.getHours() === 23 &&
+      end.getMinutes() === 59;
     return {
       id: task._id,
       title: task.title,
       start: task.startDate,
       end: task.endDate,
-      allDay: task.allDay,
+      allDay: isAllDay,
       extendedProps: {
         description: task.description,
         tags: task.tags,
@@ -128,6 +135,7 @@ function App() {
     if (!response.ok) {
       throw new Error(data?.error || "Failed to create task");
     }
+
     setTasks((prev) => [...prev, toCalendarTask(data.task)]);
   };
 
@@ -302,6 +310,7 @@ function App() {
             isOpen={isGroupModalOpen}
             onClose={closeGroupModal}
             Colors={colors}
+            authUser={authUser}
           />
           <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />
         </div>
