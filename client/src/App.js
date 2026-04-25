@@ -42,7 +42,6 @@ function App() {
     });
 
   const TooltipBox = () => {
-    console.log(tooltip.event);
     if (!tooltip.visible || !tooltip.event) return null;
     const { title, start, end } = tooltip.event;
 
@@ -86,6 +85,7 @@ function App() {
   };
 
   function toCalendarTask(task) {
+    console.log("TOCAL", task);
     const start = new Date(task.startDate);
     const end = new Date(task.endDate);
     const isAllDay =
@@ -99,6 +99,10 @@ function App() {
       start: task.startDate,
       end: task.endDate,
       allDay: isAllDay,
+      classNames:
+        task.completedAt && task.completedAt.length > 0
+          ? ["task-completed"]
+          : [],
       extendedProps: {
         description: task.description,
         tags: task.tags,
@@ -123,7 +127,7 @@ function App() {
       groupId: "0",
     };
 
-    console.log("PAYLOAD: " + JSON.stringify(payload));
+    console.log(payload);
 
     const response = await fetch("/tasks", {
       method: "POST",
@@ -137,6 +141,53 @@ function App() {
     }
 
     setTasks((prev) => [...prev, toCalendarTask(data.task)]);
+  };
+
+  const removeTask = (taskId) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+  };
+
+  const updateTask = async (taskData) => {
+    const response = await fetch(`/tasks/${taskData.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: taskData.title,
+        description: taskData.extendedProps?.description,
+        tags: taskData.extendedProps?.tags,
+        completed: taskData.extendedProps?.completed,
+        startDate: taskData.start,
+        endDate: taskData.end,
+        allDay: taskData.allDay,
+        reoccurrence: taskData.extendedProps?.reoccurrence,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || "Failed to update task");
+
+    if (taskData.extendedProps?.completed) {
+      await fetch(`/tasks/completed/${taskData.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    console.log("completed value:", taskData.extendedProps?.completed);
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === taskData.id) {
+          const updatedTask = {
+            ...data.task,
+            completedAt: taskData.extendedProps?.completed
+              ? [new Date()]
+              : data.task.completedAt,
+          };
+          console.log("updatedTask:", updatedTask);
+          return toCalendarTask(updatedTask);
+        }
+        return t;
+      }),
+    );
   };
 
   useEffect(() => {
@@ -163,6 +214,7 @@ function App() {
 
   const openTaskModal = (eventInfo = null) => {
     setTaskData({
+      id: eventInfo?.id || null,
       title: eventInfo?.title || "",
       date: eventInfo?.date || "",
       startTime: eventInfo?.startTime || "",
@@ -282,12 +334,15 @@ function App() {
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}
             Colors={colors}
-            OnRemoveTask={deleteTask}
+            onRemoveTask={removeTask}
+            deleteTask={deleteTask}
             taskData={taskData}
+            setTasks={setTasks}
             onAddTask={addTask}
             setTaskData={setTaskData}
             authUser={authUser}
             toCalendarTask={toCalendarTask}
+            onUpdateTask={updateTask}
           />
           <LoginModal
             isOpen={isLoginModalOpen}

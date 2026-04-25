@@ -284,3 +284,9 @@ td {
 .asst-message > p {
   margin-bottom: 5px;
 }
+
+.task-completed,
+.fc-event-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
