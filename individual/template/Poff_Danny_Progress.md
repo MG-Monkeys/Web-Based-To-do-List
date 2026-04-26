@@ -90,3 +90,29 @@ LOC: 16
 
 Features: 3
 Requirements: 6
+
+# Week 14
+
+## Description
+
+busy
+
+LOC: 0
+
+Features: 3
+Requirements: 6
+
+# Week 15
+
+## Description
+
+Created the invite inbox
+connected endpoints
+created an api endpoint to get users by their username
+created an api endpoint to get a user's groups
+Updated JWT to be more secure
+
+LOC: 443 
+
+Features: 5
+Requirements: 7
