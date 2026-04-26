@@ -1,4 +1,10 @@
-export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
+export default function GroupModal({
+  isOpen,
+  onClose,
+  Colors,
+  authUser,
+  setUserGroups,
+}) {
   if (!isOpen) return null;
 
   async function handleSubmit(e) {
@@ -21,9 +27,23 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
     }
 
     const data = await response.json();
+    console.log("Group Created", data);
     const groupId = data.group._id;
-    const toInvite = formJson.toInvite.split(",");
 
+    await fetch(`/users/acceptInvite/${authUser.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ groupId }),
+    });
+
+    setUserGroups((prev) => [...prev, data.group]);
+
+    const toInvite = formJson.toInvite
+      ? formJson.toInvite
+          .split(",")
+          .map((u) => u.trim())
+          .filter((u) => u !== "")
+      : [];
     for (const username of toInvite) {
       const userResponse = await fetch(`/users/username/${username.trim()}`, {
         method: "GET",
@@ -45,6 +65,7 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
         }),
       });
     }
+    onClose();
   }
 
   return (

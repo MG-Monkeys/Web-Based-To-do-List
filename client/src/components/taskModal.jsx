@@ -9,6 +9,7 @@ export default function TaskModal({
   toCalendarTask,
   authUser,
   onRemoveTask,
+  groupList,
   Colors,
   taskData,
   onAddTask,
@@ -42,9 +43,9 @@ export default function TaskModal({
         tags: tags,
         completed: completed,
         reoccurrence: formJson.reoccurrence,
+        groupId: formJson.groupId,
       },
     };
-    console.log("FORMJSON", formJson.completed);
     setError("");
     setIsSubmitting(true);
     if (isEditing) {
@@ -170,6 +171,23 @@ export default function TaskModal({
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
+            </select>
+          </label>
+          <label>
+            Group?
+            <select
+              name="groupId"
+              value={taskData.groupId || "none"}
+              onChange={(e) =>
+                setTaskData({ ...taskData, groupId: e.target.value })
+              }
+            >
+              <option value="none">None</option>
+              {groupList.map((group) => (
+                <option key={group._id} value={group._id}>
+                  {group.groupName}
+                </option>
+              ))}
             </select>
           </label>
           <label>

@@ -18,6 +18,7 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [groupList, setGroupList] = useState([]);
 
   const [colors, setColors] = useState({
     primary: "#fefeff",
@@ -108,6 +109,7 @@ function App() {
         tags: task.tags,
         completed: task.completed,
         reoccurrence: task.reoccurrence,
+        groupId: task.groupId,
       },
     };
   }
@@ -124,7 +126,7 @@ function App() {
       reoccurrence: newTask.extendedProps?.reoccurrence,
       completed: newTask.extendedProps?.completed,
       assignedTo,
-      groupId: "0",
+      groupId: newTask.extendedProps?.groupId,
     };
 
     console.log(payload);
@@ -160,6 +162,7 @@ function App() {
         endDate: taskData.end,
         allDay: taskData.allDay,
         reoccurrence: taskData.extendedProps?.reoccurrence,
+        groupId: taskData.extendedProps?.groupId,
       }),
     });
 
@@ -224,6 +227,7 @@ function App() {
       completed: eventInfo?.completed ?? false,
       description: eventInfo?.description || "",
       tags: eventInfo?.tags || [],
+      groupId: eventInfo?.groupId || null,
     });
     setIsTaskModalOpen(true);
   };
@@ -305,7 +309,11 @@ function App() {
           >
             <i className="fa-solid fa-plus" />
           </button>
-          <GroupList User={authUser} />
+          <GroupList
+            User={authUser}
+            userGroups={groupList}
+            setUserGroups={setGroupList}
+          />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar
@@ -337,6 +345,7 @@ function App() {
             onRemoveTask={removeTask}
             deleteTask={deleteTask}
             taskData={taskData}
+            groupList={groupList}
             setTasks={setTasks}
             onAddTask={addTask}
             setTaskData={setTaskData}
@@ -365,6 +374,7 @@ function App() {
             isOpen={isGroupModalOpen}
             onClose={closeGroupModal}
             Colors={colors}
+            setUserGroups={setGroupList}
             authUser={authUser}
           />
           <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />
