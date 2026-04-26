@@ -87,7 +87,6 @@ function App() {
   };
 
   function toCalendarTask(task) {
-    console.log("TOCAL", task);
     const start = new Date(task.startDate);
     const end = new Date(task.endDate);
     const isAllDay =
@@ -128,8 +127,6 @@ function App() {
       assignedTo,
       groupId: "0",
     };
-
-    console.log(payload);
 
     const response = await fetch("/tasks", {
       method: "POST",

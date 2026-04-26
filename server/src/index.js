@@ -685,7 +685,7 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       {
-        $push: { groups: req.body.groupId },
+        $push: { groups: req.body.groups },
       },
       { new: true, runValidators: true },
     );

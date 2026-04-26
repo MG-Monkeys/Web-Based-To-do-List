@@ -10,11 +10,12 @@ export default function GroupList({ User }) {
 
     async function getGroups() {
       try {
-        const response = await fetch(`/users/groups/${User.id}`);
+        const response = await fetch(`/users/groups/${User.user.id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch groups");
         }
         const data = await response.json();
+        console.log("DATA: " + JSON.stringify(data));
         setGroupList(data.groups);
       } catch (e) {
         console.error(e);

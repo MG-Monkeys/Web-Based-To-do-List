@@ -11,7 +11,7 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         groupName: formJson.name,
-        ownerId: authUser.id,
+        ownerId: authUser.user.id,
       }),
     });
 
@@ -39,9 +39,16 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          senderId: authUser?.id,
+          senderId: authUser?.user.id,
           recipientId: userData.id,
           groupId,
+        }),
+      });
+      await fetch("/users/acceptInvite/"+authUser?.user.id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groups : {id: groupId, name: formJson.name},
         }),
       });
     }
