@@ -20,6 +20,8 @@ function App() {
   const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [groupList, setGroupList] = useState([]);
+  const [selectedGroups, setSelectedGroups] = useState([]);
 
   const [colors, setColors] = useState({
     primary: "#fefeff",
@@ -107,8 +109,9 @@ function App() {
       extendedProps: {
         description: task.description,
         tags: task.tags,
-        completed: task.completed,
+        completed: task.completedAt && task.completedAt.length > 0,
         reoccurrence: task.reoccurrence,
+        groupId: task.groupId,
       },
     };
   }
@@ -125,7 +128,7 @@ function App() {
       reoccurrence: newTask.extendedProps?.reoccurrence,
       completed: newTask.extendedProps?.completed,
       assignedTo,
-      groupId: "0",
+      groupId: newTask.extendedProps?.groupId,
     };
 
     const response = await fetch("/tasks", {
@@ -141,6 +144,19 @@ function App() {
 
     setTasks((prev) => [...prev, toCalendarTask(data.task)]);
   };
+
+  const visibleTasks = tasks.filter((task) => {
+    console.log(
+      "task groupId:",
+      task.extendedProps.groupId,
+      typeof task.extendedProps.groupId,
+    );
+    return (
+      !task.extendedProps.groupId ||
+      task.extendedProps.groupId === "none" ||
+      selectedGroups.includes(task.extendedProps.groupId)
+    );
+  });
 
   const removeTask = (taskId) => {
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -159,6 +175,7 @@ function App() {
         endDate: taskData.end,
         allDay: taskData.allDay,
         reoccurrence: taskData.extendedProps?.reoccurrence,
+        groupId: taskData.extendedProps?.groupId,
       }),
     });
 
@@ -235,6 +252,7 @@ function App() {
       completed: eventInfo?.completed ?? false,
       description: eventInfo?.description || "",
       tags: eventInfo?.tags || [],
+      groupId: eventInfo?.groupId || null,
     });
     setIsTaskModalOpen(true);
   };
@@ -299,7 +317,7 @@ function App() {
           <div className="sidebar-spacer" />
           <h5>This Week:</h5>
           <TaskList
-            tasks={tasks}
+            tasks={visibleTasks}
             openTaskModal={openTaskModal}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
@@ -330,11 +348,17 @@ function App() {
           >
             <i className="fa-solid fa-plus" />
           </button>
-          <GroupList User={authUser} />
+          <GroupList
+            User={authUser}
+            userGroups={groupList}
+            setUserGroups={setGroupList}
+            selectedGroups={selectedGroups}
+            setSelectedGroups={setSelectedGroups}
+          />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar
-            tasks={tasks}
+            tasks={visibleTasks}
             Colors={colors}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
@@ -362,6 +386,7 @@ function App() {
             onRemoveTask={removeTask}
             deleteTask={deleteTask}
             taskData={taskData}
+            groupList={groupList}
             setTasks={setTasks}
             onAddTask={addTask}
             setTaskData={setTaskData}
@@ -396,6 +421,7 @@ function App() {
             isOpen={isGroupModalOpen}
             onClose={closeGroupModal}
             Colors={colors}
+            setUserGroups={setGroupList}
             authUser={authUser}
           />
           <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />

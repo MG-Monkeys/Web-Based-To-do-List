@@ -19,7 +19,9 @@ export default function Calendar({
         plugins={[dayGridPlugin]}
         initialView="dayGridMonth"
         events={tasks}
-        eventClick={(clickInfo) => openTaskModal(handleEventClick(clickInfo))}
+        eventClick={(clickInfo) => {
+          openTaskModal(handleEventClick(clickInfo));
+        }}
         eventDidMount={eventDidMount}
       />
     </div>
