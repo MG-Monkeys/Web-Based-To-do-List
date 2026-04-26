@@ -1,4 +1,6 @@
 import { useState } from "react";
+import neutralMonkey from "../assets/neutral-monkey.png";
+import happyMonkey from "../assets/happy-monkey.png";
 
 export default function Assistant({ chatList, setChatList }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -52,23 +54,13 @@ export default function Assistant({ chatList, setChatList }) {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          position: "fixed",
-          bottom: "24px",
-          right: "24px",
-          width: "52px",
-          height: "52px",
-          borderRadius: "50%",
-          background: "#6366f1",
-          color: "white",
-          fontSize: "24px",
-          border: "none",
-          cursor: "pointer",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-          zIndex: 1000,
-        }}
+        className="chat-monkey-button"
       >
-        {isOpen ? "✕" : "💬"}
+        <img
+          src={isOpen ? happyMonkey : neutralMonkey}
+          alt="chat"
+          className="chat-monkey-img"
+        />
       </button>
     </>
   );
