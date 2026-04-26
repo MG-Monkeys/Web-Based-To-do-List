@@ -30,7 +30,7 @@ export default function GroupModal({
     console.log("Group Created", data);
     const groupId = data.group._id;
 
-    await fetch(`/users/acceptInvite/${authUser.id}`, {
+    await fetch(`/users/acceptInvite/${authUser?.user.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ groupId }),
