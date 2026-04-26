@@ -65,30 +65,49 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
         onClick={(e) => e.stopPropagation()}
         style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
       >
-        <p>{mode === "signup" ? "Sign Up" : "Log In"}</p>
-        <div className="auth-toggle-row">
-          <button
-            type="button"
-            className="modal-button"
-            onClick={() => setMode("login")}
-            disabled={isSubmitting}
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            className="modal-button"
-            onClick={() => setMode("signup")}
-            disabled={isSubmitting}
-          >
+        {mode === "signup" ? (
+          <>
             Sign Up
-          </button>
-        </div>
+            <div className="auth-toggle-row">
+              Already have an account?
+              <button
+                type="button"
+                className="modal-button"
+                onClick={() => setMode("login")}
+                disabled={isSubmitting}
+                style={{ backgroundColor: Colors.tertiary }}
+              >
+                Log In
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            Log In
+            <div className="auth-toggle-row">
+              Don't have an account?
+              <button
+                type="button"
+                className="modal-button"
+                onClick={() => setMode("signup")}
+                disabled={isSubmitting}
+                style={{ backgroundColor: Colors.tertiary }}
+              >
+                Sign Up
+              </button>
+            </div>
+          </>
+        )}
         <form onSubmit={handleSubmit}>
           {mode === "signup" ? (
             <label>
               Username:
-              <input type="text" placeholder="username" name="username" required />
+              <input
+                type="text"
+                placeholder="username"
+                name="username"
+                required
+              />
             </label>
           ) : null}
           <label>
@@ -113,18 +132,24 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
             <p className={`auth-message ${status.type}`}>{status.message}</p>
           ) : null}
           <div>
-            <button type="submit" className="modal-button" disabled={isSubmitting}>
+            <button
+              type="submit"
+              className="modal-button"
+              disabled={isSubmitting}
+              style={{ backgroundColor: Colors.tertiary }}
+            >
               {isSubmitting
                 ? "Please wait..."
                 : mode === "signup"
-                ? "Create Account"
-                : "Log In"}
+                  ? "Create Account"
+                  : "Log In"}
             </button>
             <button
               type="button"
               className="modal-button"
               onClick={onClose}
               disabled={isSubmitting}
+              style={{ backgroundColor: Colors.tertiary }}
             >
               Cancel
             </button>

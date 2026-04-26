@@ -1,14 +1,19 @@
 import { useState } from "react";
 import getFormattedDate from "../utils/getFormattedDate";
+import { deleteTask } from "../utils/eventUtil";
 
 export default function TaskModal({
   isOpen,
   onClose,
-  onAddTask,
+  setTasks,
+  toCalendarTask,
+  authUser,
   onRemoveTask,
   Colors,
   taskData,
+  onAddTask,
   setTaskData,
+  onUpdateTask,
 }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,15 +24,14 @@ export default function TaskModal({
     e.preventDefault();
     const formData = new FormData(e.target);
     const formJson = Object.fromEntries(formData.entries());
-
     const date = formJson.date;
     const startTime = formJson.startTime || "09:00";
     const endTime = formJson.endTime || "10:00";
-    const isAllDay = formJson.allDay ?? false;
+    const isAllDay = formJson.allDay === "on";
     const start = isAllDay ? `${date}T00:00` : `${date}T${startTime}`;
     const end = isAllDay ? `${date}T23:59` : `${date}T${endTime}`;
     const tags = formJson.tags.split(",");
-    const completed = formJson.completed;
+    const completed = formJson.completed === "on";
     const newTask = {
       title: formJson.title,
       start,
@@ -37,23 +41,34 @@ export default function TaskModal({
         description: formJson.description,
         tags: tags,
         completed: completed,
+        reoccurrence: formJson.reoccurrence,
       },
     };
-
+    console.log("FORMJSON", formJson.completed);
     setError("");
     setIsSubmitting(true);
-    try {
-      await onAddTask(newTask);
-      onClose();
-    } catch (submitError) {
-      setError(submitError.message);
-    } finally {
-      setIsSubmitting(false);
+    if (isEditing) {
+      try {
+        await onUpdateTask({ ...newTask, id: taskData.id });
+        onClose();
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      try {
+        await onAddTask(newTask);
+        onClose();
+      } catch (submitError) {
+        setError(submitError.message);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   }
 
-  const isEditing = !!taskData.title;
-  console.log(taskData);
+  const isEditing = !!taskData.id;
 
   return (
     <div
@@ -72,6 +87,7 @@ export default function TaskModal({
             <label>
               <input
                 type="checkbox"
+                name="completed"
                 checked={taskData.completed || false}
                 onChange={(e) =>
                   setTaskData({ ...taskData, completed: e.target.checked })
@@ -98,7 +114,6 @@ export default function TaskModal({
             <input
               type="date"
               name="date"
-              defaultValue={getFormattedDate()}
               min="2026-02-01"
               max="2100-12-30"
               value={taskData.date || getFormattedDate()}
@@ -145,10 +160,10 @@ export default function TaskModal({
           <label>
             Repeat?
             <select
-              name="repeat"
-              value={taskData.repeat || "none"}
+              name="reoccurrence"
+              value={taskData.reoccurrence || "none"}
               onChange={(e) =>
-                setTaskData({ ...taskData, repeat: e.target.value })
+                setTaskData({ ...taskData, reoccurrence: e.target.value })
               }
             >
               <option value="none">None</option>
@@ -186,7 +201,7 @@ export default function TaskModal({
               }
             />
             <button
-              class="ai-button"
+              className="ai-button"
               style={{ backgroundColor: Colors.tertiary }}
             >
               AI
@@ -215,6 +230,7 @@ export default function TaskModal({
                 type="button"
                 className="modal-button"
                 onClick={() => {
+                  deleteTask(taskData.id);
                   onRemoveTask(taskData.id);
                   onClose();
                 }}
