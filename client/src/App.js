@@ -311,7 +311,6 @@ function App() {
             }}
           >
             <i className="fa-solid fa-plus" />
-            <i className="fa-solid fa-plus" />
           </button>
           <div className="sidebar-spacer" />
           <h5>This Week:</h5>
