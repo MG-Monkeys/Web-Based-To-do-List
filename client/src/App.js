@@ -86,7 +86,6 @@ function App() {
   };
 
   function toCalendarTask(task) {
-    console.log("TOCAL", task);
     const start = new Date(task.startDate);
     const end = new Date(task.endDate);
     const isAllDay =
@@ -107,7 +106,7 @@ function App() {
       extendedProps: {
         description: task.description,
         tags: task.tags,
-        completed: task.completed,
+        completed: task.completedAt && task.completedAt.length > 0,
         reoccurrence: task.reoccurrence,
         groupId: task.groupId,
       },

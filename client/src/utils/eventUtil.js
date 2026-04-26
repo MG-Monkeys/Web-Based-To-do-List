@@ -11,6 +11,7 @@ export function handleEventClick(clickInfo) {
     description: clickInfo.event.extendedProps.description,
     tags: clickInfo.event.extendedProps.tags,
     completed: clickInfo.event.extendedProps.completed,
+    groupId: clickInfo.event.extendedProps.groupId,
   };
   return result;
 }
