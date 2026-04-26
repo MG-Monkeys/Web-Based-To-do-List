@@ -397,9 +397,9 @@ app.get("/invites/:recipientId", auth, async function (req, res) {
 // POST /invites - create an invite
 app.post("/invites", auth, async function (req, res) {
   try {
-    const { senderId, recipientId, groupId } = req.body;
+    const { senderName, senderId, recipientId, groupName, groupId } = req.body;
 
-    const newInvite = await Invites.create({ senderId, recipientId, groupId });
+    const newInvite = await Invites.create({ senderName, senderId, recipientId, groupName, groupId });
     return res.status(201).json({
       message: "Invite created",
       invite: newInvite,

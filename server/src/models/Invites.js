@@ -1,11 +1,19 @@
 import mongoose from 'mongoose';
 
 const InvitesSchema = new mongoose.Schema({
+    senderName: {
+        type: String,
+        required: true,
+    },
     senderId: {
         type: String,
         required: true,
     },
     recipientId: {
+        type: String,
+        required: true,
+    },
+    groupName: {
         type: String,
         required: true,
     },

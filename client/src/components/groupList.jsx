@@ -15,7 +15,6 @@ export default function GroupList({ User }) {
           throw new Error("Failed to fetch groups");
         }
         const data = await response.json();
-        console.log("DATA: " + JSON.stringify(data));
         setGroupList(data.groups);
       } catch (e) {
         console.error(e);

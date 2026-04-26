@@ -39,8 +39,10 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          senderName: authUser.user.username,
           senderId: authUser?.user.id,
           recipientId: userData.id,
+          groupName: formJson.name,
           groupId,
         }),
       });

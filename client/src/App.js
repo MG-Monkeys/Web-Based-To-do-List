@@ -378,6 +378,7 @@ function App() {
             isOpen={isInboxModalOpen}
             onClose={closeInboxModal}
             Colors={colors}
+            User={authUser}
           />
           <ColorModal
             isOpen={isColorModalOpen}
