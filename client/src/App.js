@@ -219,7 +219,7 @@ function App() {
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const response = await fetch("/tasks/user/"+localStorage.getItem("email"), {
+        const response = await fetch(`/tasks/user/${localStorage.getItem("email")}`, {
           credentials: "include",
         });
         if (response.status === 404) {
@@ -229,8 +229,8 @@ function App() {
         if (!response.ok) {
           throw new Error("Failed to load tasks");
         }
-
         const data = await response.json();
+        console.log("TASKS: " + data[0].title);
         setTasks(data.map(toCalendarTask));
       } catch (error) {
         console.error(error);

@@ -14,13 +14,13 @@ export default function GroupList({
 
     async function getGroups() {
       try {
-        const response = await fetch(`/users/groups/${User.id}`);
+        const response = await fetch(`/users/groups/${User?.user.id}`);
         if (!response.ok) throw new Error("Failed to fetch groups");
         const { groups } = await response.json();
 
         const fullGroups = await Promise.all(
           groups.map(async (groupId) => {
-            const res = await fetch(`/groups/${groupId}`);
+            const res = await fetch(`/groups/${groupId.id}`);
             return res.json();
           }),
         );
@@ -43,17 +43,17 @@ export default function GroupList({
     <div className="group-list">
       <h5>Groups</h5>
       {userGroups.map((group) => (
-        <div key={group._id} className="group-item">
+        <div key={group.id} className="group-item">
           <label>
             <input
               type="checkbox"
-              checked={selectedGroups.includes(group._id)}
+              checked={selectedGroups.includes(group.id)}
               onChange={(e) => {
                 if (e.target.checked) {
-                  setSelectedGroups((prev) => [...prev, group._id]);
+                  setSelectedGroups((prev) => [...prev, group.id]);
                 } else {
                   setSelectedGroups((prev) =>
-                    prev.filter((id) => id !== group._id),
+                    prev.filter((id) => id !== group.id),
                   );
                 }
               }}
