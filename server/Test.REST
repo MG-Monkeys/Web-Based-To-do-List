@@ -56,8 +56,7 @@ Authorization: Bearer {{token}}
 
 
 ### TASKS - READ BY USER (set @userId first)
-GET {{baseUrl}}/tasks/{{userId}}
-Authorization: Bearer {{token}}
+GET {{baseUrl}}/tasks/user/bob3@gmail.com
 
 ### TASKS - READ ONE (set @taskId first)
 GET {{baseUrl}}/tasks/{{taskId}}

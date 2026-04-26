@@ -41,7 +41,6 @@ function App() {
     });
 
   const TooltipBox = () => {
-    console.log(tooltip.event);
     if (!tooltip.visible || !tooltip.event) return null;
     const { title, start, end } = tooltip.event;
 
@@ -108,17 +107,19 @@ function App() {
   // Check localStorage on app load for existing user
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
-    const savedToken = localStorage.getItem("token");
+    const savedEmail = localStorage.getItem("email");
     const savedId = localStorage.getItem("id");
     if (savedUser) {
-      setAuthUser({user: savedUser, token: savedToken, id: savedId});
+      setAuthUser({user: {id: savedId, username: savedUser, email: savedEmail}}); 
     }
   }, []);
 
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const response = await fetch("/tasks");
+        const response = await fetch("/tasks/user/"+localStorage.getItem("email"), {
+          credentials: "include",
+        });
         if (response.status === 404) {
           setTasks([]);
           return;
@@ -135,10 +136,10 @@ function App() {
     }
 
     fetchTasks();
-  }, []);
+  }, [authUser]);
 
   const addTask = async (newTask) => {
-    const assignedTo = authUser?.email || "guest@local";
+    const assignedTo = authUser?.user.email || "guest@local";
     const payload = {
       title: newTask.title,
       description: newTask.extendedProps?.description,
@@ -156,7 +157,8 @@ function App() {
 
     const response = await fetch("/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization" : "Bearer " + authUser?.token },
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -206,8 +208,9 @@ function App() {
 
   const handleLogout = () => {
     setAuthUser(null);
+    setTasks([]);
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem("email");
     localStorage.removeItem("id");
   };
 

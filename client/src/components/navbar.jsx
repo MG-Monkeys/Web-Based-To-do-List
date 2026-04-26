@@ -45,7 +45,7 @@ export default function NavBar({
         style={{ backgroundColor: Colors.tertiary, color: Colors.tertiaryText }}
       >
         {authUser ? (
-          `Log Out (${authUser.user})`
+          `Log Out (${authUser.user.username})`
         ) : (
           <i
             className="fa-solid fa-user-circle nav-icon"

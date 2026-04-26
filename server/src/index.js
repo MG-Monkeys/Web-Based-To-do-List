@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import methodOverride from "method-override";
+import cookieParser from "cookie-parser";
 import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
@@ -39,7 +40,7 @@ dotenv.config();
 
 // JWT authentication middleware
 const auth = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
@@ -57,6 +58,7 @@ const filter = new Filter();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use("/public", express.static("public"));
 app.use(express.json());
 
@@ -103,9 +105,9 @@ app.get("/", function (req, res) {
 // });
 
 // GET /tasks - Show all tasks for a user
-app.get("/tasks/:AssignedTo", auth, async function (req, res) {
+app.get("/tasks/user/:AssignedTo", auth, async function (req, res) {
   try {
-    const tasks = await Task.find({ AssignedTo: req.params.AssignedTo });
+    const tasks = await Task.find({ assignedTo: req.params.AssignedTo });
     if(!tasks || tasks.length === 0) {
       return res.status(404).json({ error: "Tasks not found" });
     }
@@ -117,7 +119,7 @@ app.get("/tasks/:AssignedTo", auth, async function (req, res) {
 });
 
 // GET /tasks - Show all tasks for a group
-app.get("/tasks/:GroupId", auth, async function (req, res) {
+app.get("/tasks/group/:GroupId", auth, async function (req, res) {
   try {
     const tasks = await Task.find({ groupId: req.params.GroupId });
     if(!tasks || tasks.length === 0) {
@@ -699,7 +701,17 @@ app.post('/auth/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token, user: user.username, id: user._id });
+  console.log("TOKEN: " + token)
+  
+  // Set HTTP-only cookie
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true, // Only send over HTTPS
+    sameSite: 'strict',
+    maxAge: 3600000 // 1 hour
+  });
+  
+  res.json({ user: { id: user._id, username: user.username, email: user.email } });
 });
 
 
