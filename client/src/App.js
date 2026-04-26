@@ -11,6 +11,7 @@ import GroupList from "./components/groupList";
 import Chat from "./components/chat";
 import GroupModal from "./components/groupModal";
 import { deleteTask } from "./utils/eventUtil";
+import MonkeyCelebration from "./components/monkeyCelebration";
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -22,6 +23,7 @@ function App() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [groupList, setGroupList] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const [colors, setColors] = useState({
     primary: "#fefeff",
@@ -186,9 +188,10 @@ function App() {
       await fetch(`/tasks/completed/${taskData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
+      setShowCelebration(true);
     }
-    console.log("completed value:", taskData.extendedProps?.completed);
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id === taskData.id) {
@@ -425,6 +428,9 @@ function App() {
           <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />
         </div>
       </div>
+      {showCelebration && (
+        <MonkeyCelebration onDone={() => setShowCelebration(false)} />
+      )}
     </div>
   );
 }

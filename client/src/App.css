@@ -339,3 +339,90 @@ td {
   object-fit: cover;
   border-radius: 50%;
 }
+
+/* ── Monkey Celebration ── */
+.monkey-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+@keyframes monkey-enter {
+  from { transform: translateY(100%) rotate(-10deg); opacity: 0; }
+  to   { transform: translateY(0%)   rotate(0deg);  opacity: 1; }
+}
+
+@keyframes monkey-shoot {
+  0%   { transform: translateX(0)    rotate(0deg);  }
+  15%  { transform: translateX(-18px) rotate(-5deg); }
+  30%  { transform: translateX(0)    rotate(0deg);  }
+  50%  { transform: translateX(-12px) rotate(-3deg); }
+  65%  { transform: translateX(0)    rotate(0deg);  }
+  100% { transform: translateX(0)    rotate(0deg);  }
+}
+
+@keyframes monkey-exit {
+  from { transform: translateY(0%)   rotate(0deg); opacity: 1; }
+  to   { transform: translateY(100%) rotate(10deg); opacity: 0; }
+}
+
+.celebration-monkey {
+  position: absolute;
+  bottom: 0;
+  right: 80px;
+  width: 160px;
+  image-rendering: auto;
+}
+
+.celebration-monkey--enter {
+  animation: monkey-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.celebration-monkey--shoot {
+  animation: monkey-shoot 0.6s ease-in-out forwards;
+}
+
+.celebration-monkey--exit {
+  animation: monkey-exit 0.7s ease-in forwards;
+}
+
+@keyframes bullet-fly {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-110vw); opacity: 0; }
+}
+
+.bullet {
+  position: absolute;
+  right: 220px;
+  width: 28px;
+  height: 5px;
+  border-radius: 3px;
+  background: #f5c518;
+  animation: bullet-fly 0.35s ease-out forwards;
+}
+
+.bullet-1 { bottom: 130px; animation-delay: 0s; }
+.bullet-2 { bottom: 120px; animation-delay: 0.08s; width: 18px; }
+.bullet-3 { bottom: 140px; animation-delay: 0.16s; width: 22px; }
+
+@keyframes bang-pop {
+  0%   { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+  40%  { transform: scale(1.3) rotate(5deg);  opacity: 1; }
+  70%  { transform: scale(1.0) rotate(-2deg); opacity: 1; }
+  100% { transform: scale(1.1) rotate(0deg);  opacity: 0; }
+}
+
+.bang-text {
+  position: absolute;
+  bottom: 180px;
+  right: 260px;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ff3300;
+  text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+  animation: bang-pop 0.9s ease-out forwards;
+  pointer-events: none;
+  font-family: "Capriola", sans-serif;
+}
