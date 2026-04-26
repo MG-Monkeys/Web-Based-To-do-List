@@ -39,6 +39,10 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
             inviteId: inviteId,
           }),
         });
+        await fetch(`/invites/delete/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        });
         getInvites();
       } catch (error) {
         setStatus({ type: "error", message: error.message });
@@ -98,7 +102,7 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
       <div className="inbox-content">
         {invitesList.map((invite) => (
 
-          <div className="auth-toggle-row" style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}>
+          <div key={invite._id} className="auth-toggle-row" style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <p><strong>{invite.groupName}</strong></p>
               <p>{invite.senderName}</p>
