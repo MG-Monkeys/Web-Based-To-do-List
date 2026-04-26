@@ -43,17 +43,17 @@ export default function GroupList({
     <div className="group-list">
       <h5>Groups</h5>
       {userGroups.map((group) => (
-        <div key={group.id} className="group-item">
+        <div key={group._id} className="group-item">
           <label>
             <input
               type="checkbox"
-              checked={selectedGroups.includes(group.id)}
+              checked={selectedGroups.includes(group._id)}
               onChange={(e) => {
                 if (e.target.checked) {
-                  setSelectedGroups((prev) => [...prev, group.id]);
+                  setSelectedGroups((prev) => [...prev, group._id]);
                 } else {
                   setSelectedGroups((prev) =>
-                    prev.filter((id) => id !== group.id),
+                    prev.filter((id) => id !== group._id),
                   );
                 }
               }}

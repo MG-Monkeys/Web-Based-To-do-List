@@ -146,11 +146,11 @@ function App() {
   };
 
   const visibleTasks = tasks.filter((task) => {
-    console.log(
-      "task groupId:",
-      task.extendedProps.groupId,
-      typeof task.extendedProps.groupId,
-    );
+    // console.log(
+    //   "task groupId:",
+    //   task.extendedProps.groupId,
+    //   typeof task.extendedProps.groupId,
+    // );
     return (
       !task.extendedProps.groupId ||
       task.extendedProps.groupId === "none" ||
@@ -198,7 +198,6 @@ function App() {
               ? [new Date()]
               : data.task.completedAt,
           };
-          console.log("updatedTask:", updatedTask);
           return toCalendarTask(updatedTask);
         }
         return t;
@@ -230,7 +229,7 @@ function App() {
           throw new Error("Failed to load tasks");
         }
         const data = await response.json();
-        console.log("TASKS: " + data[0].title);
+        console.log("TASKS: " + data.map(toCalendarTask));
         setTasks(data.map(toCalendarTask));
       } catch (error) {
         console.error(error);

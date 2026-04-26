@@ -35,9 +35,12 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            groups : {id: id, name: name},
-            inviteId: inviteId,
+            groups : {id: id, name: name}
           }),
+        });
+        await fetch(`/invites/delete/${id}`, {
+        method: "DELETE",
+        credentials: "include",
         });
         getInvites();
       } catch (error) {
@@ -98,7 +101,7 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
       <div className="inbox-content">
         {invitesList.map((invite) => (
 
-          <div className="auth-toggle-row" style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}>
+          <div key={invite._id} className="auth-toggle-row" style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <p><strong>{invite.groupName}</strong></p>
               <p>{invite.senderName}</p>
