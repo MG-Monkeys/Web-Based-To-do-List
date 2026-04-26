@@ -6,8 +6,8 @@ export default function MonkeyCelebration({ onDone }) {
 
   useEffect(() => {
     const shootTimer = setTimeout(() => setPhase("shoot"), 600);
-    const exitTimer = setTimeout(() => setPhase("exit"), 1800);
-    const doneTimer = setTimeout(() => onDone(), 2600);
+    const exitTimer = setTimeout(() => setPhase("exit"), 4000);
+    const doneTimer = setTimeout(() => onDone(), 4800);
     return () => {
       clearTimeout(shootTimer);
       clearTimeout(exitTimer);
@@ -22,7 +22,12 @@ export default function MonkeyCelebration({ onDone }) {
           <div className="bullet bullet-1" />
           <div className="bullet bullet-2" />
           <div className="bullet bullet-3" />
-          <div className="bang-text">BANG!</div>
+          <div className="bullet bullet-4" />
+          <div className="bullet bullet-5" />
+          <div className="bullet bullet-6" />
+          <div className="bullet bullet-7" />
+          <div className="bullet bullet-8" />
+          <div className="bang-text">BAAANG!</div>
         </>
       )}
       <img
