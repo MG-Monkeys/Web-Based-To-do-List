@@ -10,10 +10,10 @@
 GET {{baseUrl}}/
 
 ### GET USER
-GET {{baseUrl}}/users/69c9f7cb450c1ed342fd087a
+GET {{baseUrl}}/users/69ed7236ef963778cd951f2d
 
 ### GET USER'S GROUPS
-GET {{baseUrl}}/users/groups/69c9f7cb450c1ed342fd087a
+GET {{baseUrl}}/users/groups/69ed7236ef963778cd951f2d
 
 ### GET USER'S USERNAME
 GET {{baseUrl}}/users/username/TestUser01
@@ -169,3 +169,5 @@ Content-Type: application/json
 }
 
 
+### DECLINE INVITE
+DELETE {{baseUrl}}/invites/delete/69edaf70870c7c3863dabf48

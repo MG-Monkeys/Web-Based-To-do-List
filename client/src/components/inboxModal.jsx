@@ -5,61 +5,56 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!User) {
-      return;
-    }
-
   async function getInvites() {
     try {
-      const response = await fetch(`invites/${User.user.id}`);
+      const response = await fetch(`invites/${User?.user.id}`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || "Could not fetch invites");
       }
-      console.log("DATA: " + JSON.stringify(data));
+      console.log("Fetched invites: ", data);
       setInvitesList(data);
     } catch (error) {
       setStatus({ type: "error", message: error.message });
     } 
   }
-  getInvites();
 
+  useEffect(() => {
+    if (!User) {
+      return;
+    }
+    getInvites();
   }, [User]);
   
   if (!isOpen) return null;
 
-    async function handleAccept() {
-    console.log("accepted invite");
+    async function handleAccept(inviteId, id, name) {
+      try {
+        await fetch(`/users/acceptInvite/${User?.user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            groups : {id: id, name: name},
+            inviteId: inviteId,
+          }),
+        });
+        getInvites();
+      } catch (error) {
+        setStatus({ type: "error", message: error.message });
+      }
+    }
 
-  //   try {
-  //   const response = await fetch(endpoint, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-
-  //   const data = await response.json();
-  //   if (!response.ok) {
-  //     throw new Error(data?.error || "Request failed");
-  //   }
-
-  //   setStatus({
-  //     type: "success",
-  //     message: "",
-  //   });
-  //   onAuthSuccess(data.user);
-  //   onClose();
-  // } catch (error) {
-  //   setStatus({ type: "error", message: error.message });
-  // } finally {
-  //   setIsSubmitting(false);
-  // }
-
-  }
-
-  async function handleDecline() {
-    console.log("declined invite");
+  async function handleDecline(id) {
+    try {
+      await fetch(`/invites/delete/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      getInvites();
+    } catch (error) {
+      setStatus({ type: "error", message: error.message });
+    }
   }
 
   if (!User) return (
@@ -114,7 +109,7 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
                 type="button"
                 className="modal-button"
                 style={{width: "100%"}}
-                onClick={() => handleAccept(invite)}
+                onClick={() => handleAccept(invite._id, invite.groupId, invite.groupName)}
                 disabled={isSubmitting}
               > Accept </button>
 
@@ -122,7 +117,7 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
                 type="button"
                 className="modal-button"
                 style={{width: "100%"}}
-                onClick={() => handleDecline(invite)}
+                onClick={() => handleDecline(invite._id)}
                 disabled={isSubmitting}
               > Decline </button>
             </div>

@@ -35,7 +35,7 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
         continue;
       }
 
-      await fetch("/invites", {
+      const newInvite = await fetch("/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,11 +46,16 @@ export default function GroupModal({ isOpen, onClose, Colors, authUser }) {
           groupId,
         }),
       });
+      if (!newInvite.ok) {
+        console.error(`Failed to send invite to "${username.trim()}"`);
+        return;
+      }
       await fetch("/users/acceptInvite/"+authUser?.user.id, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groups : {id: groupId, name: formJson.name},
+          inviteId: newInvite.id,
         }),
       });
     }

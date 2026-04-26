@@ -411,14 +411,13 @@ app.post("/invites", auth, async function (req, res) {
 });
 
 // DELETE /invites/delete/:id - delete an invite by id, use this for accepting or declining an invite
-app.post("/invites/delete/:id", auth, async function (req, res) {
+app.delete("/invites/delete/:id", auth, async function (req, res) {
   try {
-    const { senderId, recipientId, groupId } = req.body;
-
     const deletedInvite = await Invites.findByIdAndDelete(req.params.id);
     if (!deletedInvite) {
       return res.status(404).json({ error: "Invite not found" });
     }
+    return res.json({ message: "Invite deleted successfully" });
   } catch (error) {
     console.error("Error deleting invite: ", error);
     res.status(500).json({ error: "Error deleting invite" });
@@ -697,6 +696,11 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
       message: "User updated",
       user: updatedUser,
     });
+
+    const deletedInvite = await Invites.findByIdAndDelete(req.body.inviteId);
+    if (!deletedInvite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
   } catch (e) {
     console.error(e);
     res.status(500).send("Error updating user");
