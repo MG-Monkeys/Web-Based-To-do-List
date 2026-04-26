@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 
-export default function GroupList({ User, userGroups, setUserGroups }) {
+export default function GroupList({
+  User,
+  userGroups,
+  setUserGroups,
+  selectedGroups,
+  setSelectedGroups,
+}) {
   useEffect(() => {
     if (!User) {
       return;
@@ -39,7 +45,19 @@ export default function GroupList({ User, userGroups, setUserGroups }) {
       {userGroups.map((group) => (
         <div key={group._id} className="group-item">
           <label>
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={selectedGroups.includes(group._id)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedGroups((prev) => [...prev, group._id]);
+                } else {
+                  setSelectedGroups((prev) =>
+                    prev.filter((id) => id !== group._id),
+                  );
+                }
+              }}
+            />
           </label>
           <p>{group.groupName}</p>
         </div>

@@ -19,6 +19,7 @@ function App() {
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [groupList, setGroupList] = useState([]);
+  const [selectedGroups, setSelectedGroups] = useState([]);
 
   const [colors, setColors] = useState({
     primary: "#fefeff",
@@ -143,6 +144,19 @@ function App() {
 
     setTasks((prev) => [...prev, toCalendarTask(data.task)]);
   };
+
+  const visibleTasks = tasks.filter((task) => {
+    console.log(
+      "task groupId:",
+      task.extendedProps.groupId,
+      typeof task.extendedProps.groupId,
+    );
+    return (
+      !task.extendedProps.groupId ||
+      task.extendedProps.groupId === "none" ||
+      selectedGroups.includes(task.extendedProps.groupId)
+    );
+  });
 
   const removeTask = (taskId) => {
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -277,7 +291,7 @@ function App() {
           <div className="sidebar-spacer" />
           <h5>This Week:</h5>
           <TaskList
-            tasks={tasks}
+            tasks={visibleTasks}
             openTaskModal={openTaskModal}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
@@ -312,11 +326,13 @@ function App() {
             User={authUser}
             userGroups={groupList}
             setUserGroups={setGroupList}
+            selectedGroups={selectedGroups}
+            setSelectedGroups={setSelectedGroups}
           />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar
-            tasks={tasks}
+            tasks={visibleTasks}
             Colors={colors}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
