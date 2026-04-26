@@ -5,6 +5,7 @@ import Calendar from "./components/calendar";
 import TaskModal from "./components/taskModal";
 import TaskList from "./components/list";
 import LoginModal from "./components/loginModal";
+import InboxModal from "./components/inboxModal";
 import ColorModal from "./components/colorModal";
 import GroupList from "./components/groupList";
 import Chat from "./components/chat";
@@ -16,6 +17,7 @@ function App() {
   const [authUser, setAuthUser] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [groupList, setGroupList] = useState([]);
@@ -115,7 +117,7 @@ function App() {
   }
 
   const addTask = async (newTask) => {
-    const assignedTo = authUser?.email || "guest@local";
+    const assignedTo = authUser?.user.email || "guest@local";
     const payload = {
       title: newTask.title,
       description: newTask.extendedProps?.description,
@@ -128,8 +130,6 @@ function App() {
       assignedTo,
       groupId: newTask.extendedProps?.groupId,
     };
-
-    console.log(payload);
 
     const response = await fetch("/tasks", {
       method: "POST",
@@ -206,10 +206,22 @@ function App() {
     );
   };
 
+ // Check localStorage on app load for existing user
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    const savedEmail = localStorage.getItem("email");
+    const savedId = localStorage.getItem("id");
+    if (savedUser) {
+      setAuthUser({user: {id: savedId, username: savedUser, email: savedEmail}}); 
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const response = await fetch("/tasks");
+        const response = await fetch("/tasks/user/"+localStorage.getItem("email"), {
+          credentials: "include",
+        });
         if (response.status === 404) {
           setTasks([]);
           return;
@@ -226,7 +238,7 @@ function App() {
     }
 
     fetchTasks();
-  }, []);
+  }, [authUser]);
 
   const openTaskModal = (eventInfo = null) => {
     setTaskData({
@@ -253,6 +265,10 @@ function App() {
     setIsLoginModalOpen(false);
   };
 
+  const closeInboxModal = () => {
+    setIsInboxModalOpen(false);
+  };
+
   const closeColorModal = () => {
     setIsColorModalOpen(false);
   };
@@ -261,14 +277,23 @@ function App() {
     setIsGroupModalOpen(false);
   };
 
+  const handleLogout = () => {
+    setAuthUser(null);
+    setTasks([]);
+    localStorage.removeItem("user");
+    localStorage.removeItem("email");
+    localStorage.removeItem("id");
+  }
+
   return (
     <div className="App" style={{ backgroundColor: colors.primary }}>
       <NavBar
         onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={() => setAuthUser(null)}
+        onLogoutClick={handleLogout}
         authUser={authUser}
         onColorClick={() => setIsColorModalOpen(true)}
         Colors={colors}
+        onInboxClick={() => setIsInboxModalOpen(true)}
       />
       <div className="flexbox">
         <div
@@ -286,6 +311,7 @@ function App() {
               color: colors.tertiaryText,
             }}
           >
+            <i className="fa-solid fa-plus" />
             <i className="fa-solid fa-plus" />
           </button>
           <div className="sidebar-spacer" />
@@ -373,6 +399,12 @@ function App() {
             onClose={closeLoginModal}
             onAuthSuccess={setAuthUser}
             Colors={colors}
+          />
+          <InboxModal
+            isOpen={isInboxModalOpen}
+            onClose={closeInboxModal}
+            Colors={colors}
+            User={authUser}
           />
           <ColorModal
             isOpen={isColorModalOpen}

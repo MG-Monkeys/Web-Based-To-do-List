@@ -19,7 +19,13 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     groups: {
-      type: [String],
+      type: [
+        {
+          id: { type: [String] },
+          name: { type: [String] },
+        }
+      ],
+      default: [],
       required: false,
     }
   },

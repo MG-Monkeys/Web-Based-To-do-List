@@ -32,6 +32,7 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -39,13 +40,16 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
       if (!response.ok) {
         throw new Error(data?.error || "Request failed");
       }
+      
+      localStorage.setItem("id", data.user.id);
+      localStorage.setItem("user", data.user.username);
+      localStorage.setItem("email", data.user.email);
 
       setStatus({
         type: "success",
         message: mode === "signup" ? "Account created." : "Logged in.",
       });
-      onAuthSuccess(data.user);
-      console.log(data.user);
+      onAuthSuccess(data);
       onClose();
     } catch (error) {
       setStatus({ type: "error", message: error.message });

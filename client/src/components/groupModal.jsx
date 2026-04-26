@@ -17,7 +17,7 @@ export default function GroupModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         groupName: formJson.name,
-        ownerId: authUser.id,
+        ownerId: authUser.user.id,
       }),
     });
 
@@ -55,13 +55,27 @@ export default function GroupModal({
         continue;
       }
 
-      await fetch("/invites", {
+      const newInvite = await fetch("/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          senderId: authUser?.id,
+          senderName: authUser.user.username,
+          senderId: authUser?.user.id,
           recipientId: userData.id,
+          groupName: formJson.name,
           groupId,
+        }),
+      });
+      if (!newInvite.ok) {
+        console.error(`Failed to send invite to "${username.trim()}"`);
+        return;
+      }
+      await fetch("/users/acceptInvite/"+authUser?.user.id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groups : {id: groupId, name: formJson.name},
+          inviteId: newInvite.id,
         }),
       });
     }

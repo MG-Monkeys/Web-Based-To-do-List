@@ -1,90 +1,90 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function InboxModal({ isOpen, onClose, Colors, }) {
+export default function InboxModal({ isOpen, onClose, Colors, User}) {
+  const [invitesList, setInvitesList] = useState([]);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  async function getInvites() {
+    try {
+      const response = await fetch(`invites/${User?.user.id}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Could not fetch invites");
+      }
+      console.log("Fetched invites: ", data);
+      setInvitesList(data);
+    } catch (error) {
+      setStatus({ type: "error", message: error.message });
+    } 
+  }
+
+  useEffect(() => {
+    if (!User) {
+      return;
+    }
+    getInvites();
+  }, [User]);
+  
   if (!isOpen) return null;
 
-  async function handleAccept(e) {
-    e.preventDefault();
-    console.log("accepted invite");
+    async function handleAccept(inviteId, id, name) {
+      try {
+        await fetch(`/users/acceptInvite/${User?.user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            groups : {id: id, name: name},
+            inviteId: inviteId,
+          }),
+        });
+        getInvites();
+      } catch (error) {
+        setStatus({ type: "error", message: error.message });
+      }
+    }
 
-  //   try {
-  //   const response = await fetch(endpoint, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-
-  //   const data = await response.json();
-  //   if (!response.ok) {
-  //     throw new Error(data?.error || "Request failed");
-  //   }
-
-  //   setStatus({
-  //     type: "success",
-  //     message: "",
-  //   });
-  //   onAuthSuccess(data.user);
-  //   onClose();
-  // } catch (error) {
-  //   setStatus({ type: "error", message: error.message });
-  // } finally {
-  //   setIsSubmitting(false);
-  // }
-
+  async function handleDecline(id) {
+    try {
+      await fetch(`/invites/delete/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      getInvites();
+    } catch (error) {
+      setStatus({ type: "error", message: error.message });
+    }
   }
 
-  async function handleDecline(e) {
-    e.preventDefault();
-    console.log("declined invite");
-  }
+  if (!User) return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
+      >
+      <h2>Group Invite Inbox<hr></hr></h2>
 
+      <div className="inbox-content">
+        <p><strong>Sign in to get invites</strong></p>
+      </div>
+      </div>
+    </div>
+  );
 
-  // try {
-  //   const response = await fetch("invites/", {
-  //     method: "GET",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-
-  //   const data = await response.json();
-  //   if (!response.ok) {
-  //     throw new Error(data?.error || "Request failed");
-  //   }
-
-  //   setStatus({
-  //     type: "success",
-  //     message: "Invites gotten",
-  //   });
-  // } catch (error) {
-  //   setStatus({ type: "error", message: error.message });
-  // } 
-
-
-  // // <div className="auth-toggle-row" style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}>
-  //         <p><strong>From:</strong> Alice</p>
-  //         <button
-  //           type="button"
-  //           className="modal-button"
-  //           onClick={() => setMode("login")}
-  //           disabled={isSubmitting}
-  //         >
-  //           Accept
-  //         </button>
-  //         <button
-  //           type="button"
-  //           className="modal-button"
-  //           onClick={() => setMode("login")}
-  //           disabled={isSubmitting}
-  //         >
-  //           Decline
-  //         </button>
-  //       </div>
-
-
-
+  if(!invitesList || invitesList === 0) return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
+      >
+      <h2>Group Invite Inbox<hr></hr></h2>
+      <div className="inbox-content"><p><strong>Empty</strong></p></div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -93,15 +93,37 @@ export default function InboxModal({ isOpen, onClose, Colors, }) {
         onClick={(e) => e.stopPropagation()}
         style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}
       >
-
-      <h2>
-        Group Invite Inbox
-        <hr></hr>
-      </h2>
+      <h2>Group Invite Inbox<hr></hr></h2>
 
       <div className="inbox-content">
-        <p><strong>Empty</strong></p>
-      </div>
+        {invitesList.map((invite) => (
+
+          <div className="auth-toggle-row" style={{ backgroundColor: Colors.primary, color: Colors.primaryText }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <p><strong>{invite.groupName}</strong></p>
+              <p>{invite.senderName}</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <button
+                type="button"
+                className="modal-button"
+                style={{width: "100%"}}
+                onClick={() => handleAccept(invite._id, invite.groupId, invite.groupName)}
+                disabled={isSubmitting}
+              > Accept </button>
+
+              <button
+                type="button"
+                className="modal-button"
+                style={{width: "100%"}}
+                onClick={() => handleDecline(invite._id)}
+                disabled={isSubmitting}
+              > Decline </button>
+            </div>
+          </div>
+          ))}
+        </div>
       </div>
     </div>
   );

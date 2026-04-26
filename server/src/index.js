@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import methodOverride from "method-override";
+import cookieParser from "cookie-parser";
 import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
@@ -39,8 +40,8 @@ dotenv.config();
 
 // JWT authentication middleware
 const auth = (req, res, next) => {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
-  if (!token) return res.status(401).json({ error: "No token" });
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: 'No token' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
@@ -57,6 +58,7 @@ const filter = new Filter();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use("/public", express.static("public"));
 app.use(express.json());
 
@@ -103,10 +105,10 @@ app.get("/", function (req, res) {
 // });
 
 // GET /tasks - Show all tasks for a user
-app.get("/tasks/:AssignedTo", auth, async function (req, res) {
+app.get("/tasks/user/:AssignedTo", auth, async function (req, res) {
   try {
-    const tasks = await Task.find({ AssignedTo: req.params.AssignedTo });
-    if (!tasks || tasks.length === 0) {
+    const tasks = await Task.find({ assignedTo: req.params.AssignedTo });
+    if(!tasks || tasks.length === 0) {
       return res.status(404).json({ error: "Tasks not found" });
     }
     return res.json(tasks);
@@ -117,7 +119,7 @@ app.get("/tasks/:AssignedTo", auth, async function (req, res) {
 });
 
 // GET /tasks - Show all tasks for a group
-app.get("/tasks/:GroupId", auth, async function (req, res) {
+app.get("/tasks/group/:GroupId", auth, async function (req, res) {
   try {
     const tasks = await Task.find({ groupId: req.params.GroupId });
     if (!tasks || tasks.length === 0) {
@@ -395,9 +397,9 @@ app.get("/invites/:recipientId", auth, async function (req, res) {
 // POST /invites - create an invite
 app.post("/invites", auth, async function (req, res) {
   try {
-    const { senderId, recipientId, groupId } = req.body;
+    const { senderName, senderId, recipientId, groupName, groupId } = req.body;
 
-    const newInvite = await Invites.create({ senderId, recipientId, groupId });
+    const newInvite = await Invites.create({ senderName, senderId, recipientId, groupName, groupId });
     return res.status(201).json({
       message: "Invite created",
       invite: newInvite,
@@ -409,14 +411,13 @@ app.post("/invites", auth, async function (req, res) {
 });
 
 // DELETE /invites/delete/:id - delete an invite by id, use this for accepting or declining an invite
-app.post("/invites/delete/:id", auth, async function (req, res) {
+app.delete("/invites/delete/:id", auth, async function (req, res) {
   try {
-    const { senderId, recipientId, groupId } = req.body;
-
     const deletedInvite = await Invites.findByIdAndDelete(req.params.id);
     if (!deletedInvite) {
       return res.status(404).json({ error: "Invite not found" });
     }
+    return res.json({ message: "Invite deleted successfully" });
   } catch (error) {
     console.error("Error deleting invite: ", error);
     res.status(500).json({ error: "Error deleting invite" });
@@ -587,7 +588,43 @@ app.get("/users/:id", async function (req, res) {
   }
 });
 
-// POST /users - Add new user
+// GET /users/username/:username - Get a user by username
+app.get("/users/username/:username", async function (req, res) {
+  try {
+    const user = await User.findOne({username: req.params.username});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    });
+  }
+  catch (error) {
+    console.error("Error fetching users: ", error);
+    res.status(500).json({ error: "Error fetching users" });
+  }
+});
+
+// GET /users/groups/:id - Get a user's groups by id
+app.get("/users/groups/:id", async function (req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({
+      groups: user.groups,
+    });
+  }
+  catch (error) {
+    console.error("Error fetching users: ", error);
+    res.status(500).json({ error: "Error fetching users" });
+  }
+});
+
+// POST /users/signup - Add new user
 app.post("/users/signup", async function (req, res) {
   try {
     const { username, email, password } = req.body;
@@ -647,7 +684,7 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       {
-        $push: { groups: req.body.groupId },
+        $push: { groups: req.body.groups },
       },
       { new: true, runValidators: true },
     );
@@ -659,6 +696,11 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
       message: "User updated",
       user: updatedUser,
     });
+
+    const deletedInvite = await Invites.findByIdAndDelete(req.body.inviteId);
+    if (!deletedInvite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
   } catch (e) {
     console.error(e);
     res.status(500).send("Error updating user");
@@ -688,10 +730,18 @@ app.post("/auth/login", async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  console.log("TOKEN: " + token)
+  
+  // Set HTTP-only cookie
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true, // Only send over HTTPS
+    sameSite: 'strict',
+    maxAge: 3600000 // 1 hour
   });
-  res.json({ token });
+  
+  res.json({ user: { id: user._id, username: user.username, email: user.email } });
 });
 
 // AI
