@@ -5,6 +5,7 @@ import Calendar from "./components/calendar";
 import TaskModal from "./components/taskModal";
 import TaskList from "./components/list";
 import LoginModal from "./components/loginModal";
+import InboxModal from "./components/inboxModal";
 import ColorModal from "./components/colorModal";
 import GroupList from "./components/groupList";
 import Chat from "./components/chat";
@@ -14,6 +15,7 @@ function App() {
   const [authUser, setAuthUser] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
 
   const [colors, setColors] = useState({
@@ -103,6 +105,16 @@ function App() {
     };
   }
 
+  // Check localStorage on app load for existing user
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    const savedToken = localStorage.getItem("token");
+    const savedId = localStorage.getItem("id");
+    if (savedUser) {
+      setAuthUser({user: savedUser, token: savedToken, id: savedId});
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchTasks() {
       try {
@@ -144,7 +156,7 @@ function App() {
 
     const response = await fetch("/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Authorization" : "Bearer " + authUser?.token },
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -184,18 +196,30 @@ function App() {
     setIsLoginModalOpen(false);
   };
 
+  const closeInboxModal = () => {
+    setIsInboxModalOpen(false);
+  };
+
   const closeColorModal = () => {
     setIsColorModalOpen(false);
+  };
+
+  const handleLogout = () => {
+    setAuthUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("id");
   };
 
   return (
     <div className="App" style={{ backgroundColor: colors.primary }}>
       <NavBar
         onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={() => setAuthUser(null)}
+        onLogoutClick={handleLogout}
         authUser={authUser}
         onColorClick={() => setIsColorModalOpen(true)}
         Colors={colors}
+        onInboxClick={() => setIsInboxModalOpen(true)}
       />
       <div className="flexbox">
         <div
@@ -269,7 +293,7 @@ function App() {
             onClose={closeTaskModal}
             onAddTask={addTask}
             Colors={colors}
-            OnRemoveTask={removeTask}
+            onRemoveTask={removeTask}
             taskData={taskData}
             setTaskData={setTaskData}
           />
@@ -277,6 +301,11 @@ function App() {
             isOpen={isLoginModalOpen}
             onClose={closeLoginModal}
             onAuthSuccess={setAuthUser}
+            Colors={colors}
+          />
+          <InboxModal
+            isOpen={isInboxModalOpen}
+            onClose={closeInboxModal}
             Colors={colors}
           />
           <ColorModal

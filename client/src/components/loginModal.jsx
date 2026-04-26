@@ -40,6 +40,12 @@ export default function LoginModal({ isOpen, onClose, Colors, onAuthSuccess }) {
         throw new Error(data?.error || "Request failed");
       }
 
+      console.log("DATA: " + JSON.stringify(data));
+      
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", data.user);
+      localStorage.setItem("id", data.id);
+
       setStatus({
         type: "success",
         message: mode === "signup" ? "Account created." : "Logged in.",

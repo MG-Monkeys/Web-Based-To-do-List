@@ -37,7 +37,7 @@ export default function Calendar({
         events={tasks}
         eventClick={handleEventClick}
         eventDidMount={eventDidMount}
-        onRemoveTask={onRemoveTask}
+        //onRemoveTask={onRemoveTask}
       />
     </div>
   );

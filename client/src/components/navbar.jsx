@@ -3,7 +3,8 @@ export default function NavBar({
   onLogoutClick,
   onColorClick,
   Colors,
-  authUser,
+  authUser, 
+  onInboxClick,
 }) {
   return (
     <nav
@@ -27,11 +28,24 @@ export default function NavBar({
       </div>
       <button
         className="login-button"
+        onClick={onInboxClick}
+        style={{ backgroundColor: Colors.tertiary, color: Colors.tertiaryText }}
+      >
+        <i
+          className="fa-solid fa-solid fa-envelope nav-icon"
+          style={{
+            color: Colors.tertiaryText,
+          }}
+        />
+      </button>
+
+      <button
+        className="login-button"
         onClick={authUser ? onLogoutClick : onLoginClick}
         style={{ backgroundColor: Colors.tertiary, color: Colors.tertiaryText }}
       >
         {authUser ? (
-          `Log Out (${authUser.username})`
+          `Log Out (${authUser.user})`
         ) : (
           <i
             className="fa-solid fa-user-circle nav-icon"
