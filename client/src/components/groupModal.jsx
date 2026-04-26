@@ -30,10 +30,12 @@ export default function GroupModal({
     console.log("Group Created", data);
     const groupId = data.group._id;
 
-    await fetch(`/users/acceptInvite/${authUser?.user.id}`, {
+    await fetch("/users/acceptInvite/"+authUser?.user.id, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ groupId }),
+      body: JSON.stringify({
+        groups : {id: groupId, name: formJson.name}
+      }),
     });
 
     setUserGroups((prev) => [...prev, data.group]);
@@ -70,14 +72,6 @@ export default function GroupModal({
         console.error(`Failed to send invite to "${username.trim()}"`);
         return;
       }
-      await fetch("/users/acceptInvite/"+authUser?.user.id, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          groups : {id: groupId, name: formJson.name},
-          inviteId: newInvite.id,
-        }),
-      });
     }
     onClose();
   }

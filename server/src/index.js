@@ -696,11 +696,6 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
       message: "User updated",
       user: updatedUser,
     });
-
-    const deletedInvite = await Invites.findByIdAndDelete(req.body.inviteId);
-    if (!deletedInvite) {
-      return res.status(404).json({ error: "Invite not found" });
-    }
   } catch (e) {
     console.error(e);
     res.status(500).send("Error updating user");

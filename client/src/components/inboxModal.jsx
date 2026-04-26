@@ -35,8 +35,7 @@ export default function InboxModal({ isOpen, onClose, Colors, User}) {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            groups : {id: id, name: name},
-            inviteId: inviteId,
+            groups : {id: id, name: name}
           }),
         });
         await fetch(`/invites/delete/${id}`, {
