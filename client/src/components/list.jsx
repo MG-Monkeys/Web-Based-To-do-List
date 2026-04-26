@@ -1,24 +1,15 @@
 import FullCalendar from "@fullcalendar/react";
 import listPlugin from "@fullcalendar/list";
+import { handleEventClick } from "../utils/eventUtil";
 
-export default function TaskList({ tasks, onRemoveTask, eventDidMount }) {
-  function handleEventClick(clickInfo) {
-    if (
-      window.confirm(
-        `Are you sure you want to delete the event '${clickInfo.event.title}'`,
-      )
-    ) {
-      onRemoveTask(clickInfo.event.id);
-    }
-  }
-
+export default function TaskList({ tasks, eventDidMount, openTaskModal }) {
   return (
     <FullCalendar
       headerToolbar={""}
       plugins={[listPlugin]}
       initialView="listWeek"
       events={tasks}
-      eventClick={handleEventClick}
+      eventClick={(clickInfo) => openTaskModal(handleEventClick(clickInfo))}
       eventDidMount={eventDidMount}
       height="auto"
     />

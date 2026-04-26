@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import methodOverride from "method-override";
+import cookieParser from "cookie-parser";
 import Post from "./models/Post.js";
 import Task from "./models/Task.js";
 import Tag from "./models/Tag.js";
@@ -15,8 +16,8 @@ import { Filter } from "bad-words";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { getTasksbyDate } from "./services/tasks.js";
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // password hashing
 const salt = await bcrypt.genSalt(10);
@@ -39,13 +40,13 @@ dotenv.config();
 
 // JWT authentication middleware
 const auth = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (e) {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: "Invalid token" });
   }
 };
 
@@ -57,6 +58,7 @@ const filter = new Filter();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use("/public", express.static("public"));
 app.use(express.json());
 
@@ -103,9 +105,9 @@ app.get("/", function (req, res) {
 // });
 
 // GET /tasks - Show all tasks for a user
-app.get("/tasks/:AssignedTo", auth, async function (req, res) {
+app.get("/tasks/user/:AssignedTo", auth, async function (req, res) {
   try {
-    const tasks = await Task.find({ AssignedTo: req.params.AssignedTo });
+    const tasks = await Task.find({ assignedTo: req.params.AssignedTo });
     if(!tasks || tasks.length === 0) {
       return res.status(404).json({ error: "Tasks not found" });
     }
@@ -117,10 +119,10 @@ app.get("/tasks/:AssignedTo", auth, async function (req, res) {
 });
 
 // GET /tasks - Show all tasks for a group
-app.get("/tasks/:GroupId", auth, async function (req, res) {
+app.get("/tasks/group/:GroupId", auth, async function (req, res) {
   try {
     const tasks = await Task.find({ groupId: req.params.GroupId });
-    if(!tasks || tasks.length === 0) {
+    if (!tasks || tasks.length === 0) {
       return res.status(404).json({ error: "Tasks not found" });
     }
     return res.json(tasks);
@@ -145,14 +147,20 @@ app.get("/tasks/:id", auth, async function (req, res) {
 });
 
 // GET /tasks/due/:date - Get tasks due on a specific date
-app.get("/tasks/due/:date", auth,async function (req, res) {
+app.get("/tasks/due/:date", auth, async function (req, res) {
   try {
     const queryDate = new Date(req.params.date);
-    const tasks = await Task.find({ endDate: req.params.date, reoccurrence: "none" });
+    const tasks = await Task.find({
+      endDate: req.params.date,
+      reoccurrence: "none",
+    });
     const recurringTasks = await Task.find({ reoccurrence: { $ne: "none" } });
 
     for (const task of recurringTasks) {
-      if (isTaskDueOnDate(task, queryDate) && !isCompletedInPeriod(task, queryDate)) {
+      if (
+        isTaskDueOnDate(task, queryDate) &&
+        !isCompletedInPeriod(task, queryDate)
+      ) {
         task.status = "completed";
         tasks.push(task);
       }
@@ -176,7 +184,10 @@ function isTaskDueOnDate(task, queryDate) {
     case "monthly":
       return endDate.getUTCDate() === queryDate.getUTCDate();
     case "yearly":
-      return endDate.getUTCMonth() === queryDate.getUTCMonth() && endDate.getUTCDate() === queryDate.getUTCDate();
+      return (
+        endDate.getUTCMonth() === queryDate.getUTCMonth() &&
+        endDate.getUTCDate() === queryDate.getUTCDate()
+      );
     default:
       return false;
   }
@@ -187,7 +198,7 @@ function isCompletedInPeriod(task, queryDate) {
   if (!task.completedAt || task.completedAt.length === 0) return false;
 
   const { start, end } = getPeriodBounds(task.reoccurrence, queryDate);
-  return task.completedAt.some(comp => comp >= start && comp <= end);
+  return task.completedAt.some((comp) => comp >= start && comp <= end);
 }
 
 // Helper: Get UTC start/end bounds for the period
@@ -200,11 +211,15 @@ function getPeriodBounds(reoccurrence, queryDate) {
     case "daily":
       return {
         start: new Date(Date.UTC(year, month, day, 0, 0, 0)),
-        end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+        end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999)),
       };
     case "weekly":
-      const weekStart = new Date(Date.UTC(year, month, day - queryDate.getUTCDay(), 0, 0, 0));
-      const weekEnd = new Date(Date.UTC(year, month, day - queryDate.getUTCDay() + 6, 23, 59, 59, 999));
+      const weekStart = new Date(
+        Date.UTC(year, month, day - queryDate.getUTCDay(), 0, 0, 0),
+      );
+      const weekEnd = new Date(
+        Date.UTC(year, month, day - queryDate.getUTCDay() + 6, 23, 59, 59, 999),
+      );
       return { start: weekStart, end: weekEnd };
     case "monthly":
       const monthStart = new Date(Date.UTC(year, month, 1, 0, 0, 0));
@@ -236,8 +251,16 @@ app.get("/tasks/tag/:tag", auth, async function (req, res) {
 // POST /tasks - Add new task
 app.post("/tasks", auth, async function (req, res) {
   try {
-    const { title, description, tags, startDate, endDate, reoccurrence, assignedTo, groupId } =
-      req.body;
+    const {
+      title,
+      description,
+      tags,
+      startDate,
+      endDate,
+      reoccurrence,
+      assignedTo,
+      groupId,
+    } = req.body;
 
     if (!title || !startDate || !endDate || !assignedTo) {
       return res.status(400).json({
@@ -260,8 +283,8 @@ app.post("/tasks", auth, async function (req, res) {
       editedAt: startDate,
       completedAt: null,
       reoccurrence: reoccurrence ?? "none",
-      assignedTo, 
-      groupId: groupId ?? "0", 
+      assignedTo,
+      groupId: groupId ?? "0",
     });
 
     return res.status(201).json({
@@ -305,20 +328,18 @@ app.put("/tasks/completed/:id", auth, async function (req, res) {
     }
     let update = {};
 
-    if(updatedTask.reoccurrence == "none") {
-      update = {$set: {completedAt: new Date(), status: "completed"}};
-    }
-    else {
+    if (updatedTask.reoccurrence == "none") {
+      update = { $set: { completedAt: new Date(), status: "completed" } };
+    } else {
       let dates = updatedTask.completedAt ? updatedTask.completedAt : [];
       dates.push(new Date());
-      update = {$set: {completedAt: dates}};
+      update = { $set: { completedAt: dates } };
     }
 
     await updatedTask.updateOne(update, {
       new: true,
       runValidators: true,
     });
-
 
     return res.json({
       message: "Task updated",
@@ -365,7 +386,7 @@ app.delete("/tasks/:id", auth, async function (req, res) {
 // GET /invites/:recipientId - get invites for a user
 app.get("/invites/:recipientId", auth, async function (req, res) {
   try {
-    const invites = await Invites.find({recipientId: req.params.recipientId});
+    const invites = await Invites.find({ recipientId: req.params.recipientId });
     return res.json(invites);
   } catch (error) {
     console.error("Error fetching invites: ", error);
@@ -376,9 +397,9 @@ app.get("/invites/:recipientId", auth, async function (req, res) {
 // POST /invites - create an invite
 app.post("/invites", auth, async function (req, res) {
   try {
-    const { senderId, recipientId, groupId } = req.body;
+    const { senderName, senderId, recipientId, groupName, groupId } = req.body;
 
-    const newInvite = await Invites.create({ senderId, recipientId, groupId });
+    const newInvite = await Invites.create({ senderName, senderId, recipientId, groupName, groupId });
     return res.status(201).json({
       message: "Invite created",
       invite: newInvite,
@@ -390,22 +411,18 @@ app.post("/invites", auth, async function (req, res) {
 });
 
 // DELETE /invites/delete/:id - delete an invite by id, use this for accepting or declining an invite
-app.post("/invites/delete/:id", auth, async function (req, res) {
+app.delete("/invites/delete/:id", auth, async function (req, res) {
   try {
-    const { senderId, recipientId, groupId } = req.body;
-
     const deletedInvite = await Invites.findByIdAndDelete(req.params.id);
-    if(!deletedInvite) {
+    if (!deletedInvite) {
       return res.status(404).json({ error: "Invite not found" });
     }
+    return res.json({ message: "Invite deleted successfully" });
   } catch (error) {
     console.error("Error deleting invite: ", error);
     res.status(500).json({ error: "Error deleting invite" });
   }
 });
-
-
-
 
 // TAGS
 
@@ -517,8 +534,12 @@ app.put("/groups/:id", auth, async function (req, res) {
   try {
     const { groupName } = req.body;
 
-    const updatedGroup = await Groups.findByIdAndUpdate(req.params.id, { groupName }, { new: true, runValidators: true });
-    if(!updatedGroup) {
+    const updatedGroup = await Groups.findByIdAndUpdate(
+      req.params.id,
+      { groupName },
+      { new: true, runValidators: true },
+    );
+    if (!updatedGroup) {
       return res.status(404).json({ error: "Group not found" });
     }
 
@@ -536,7 +557,7 @@ app.put("/groups/:id", auth, async function (req, res) {
 app.delete("/groups/:id", auth, async function (req, res) {
   try {
     const deletedGroup = await Groups.findByIdAndDelete(req.params.id);
-    if(!deletedGroup) {
+    if (!deletedGroup) {
       return res.status(404).json({ error: "Group not found" });
     }
 
@@ -561,6 +582,24 @@ app.get("/users/:id", async function (req, res) {
       username: user.username,
       email: user.email,
     });
+  } catch (error) {
+    console.error("Error fetching users: ", error);
+    res.status(500).json({ error: "Error fetching users" });
+  }
+});
+
+// GET /users/username/:username - Get a user by username
+app.get("/users/username/:username", async function (req, res) {
+  try {
+    const user = await User.findOne({username: req.params.username});
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    });
   }
   catch (error) {
     console.error("Error fetching users: ", error);
@@ -568,7 +607,24 @@ app.get("/users/:id", async function (req, res) {
   }
 });
 
-// POST /users - Add new user
+// GET /users/groups/:id - Get a user's groups by id
+app.get("/users/groups/:id", async function (req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({
+      groups: user.groups,
+    });
+  }
+  catch (error) {
+    console.error("Error fetching users: ", error);
+    res.status(500).json({ error: "Error fetching users" });
+  }
+});
+
+// POST /users/signup - Add new user
 app.post("/users/signup", async function (req, res) {
   try {
     const { username, email, password } = req.body;
@@ -579,7 +635,11 @@ app.post("/users/signup", async function (req, res) {
         .json({ error: "username, email, and password are required" });
     }
 
-    const newUser = await User.create({ username: username.trim(), email: email.toLowerCase(), password: await bcrypt.hash(password, 10) });
+    const newUser = await User.create({
+      username: username.trim(),
+      email: email.toLowerCase(),
+      password: await bcrypt.hash(password, 10),
+    });
     return res.status(201).json({
       message: "User created",
       user: {
@@ -621,10 +681,14 @@ app.put("/users/:id", auth, async function (req, res) {
 // UPDATE /users/acceptInvite - Add group to user
 app.put("/users/acceptInvite/:id", auth, async function (req, res) {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
-      $push: { groups: req.body.groupId }
-    }, { new: true, runValidators: true, });
-    if(!updatedUser) {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: { groups: req.body.groups },
+      },
+      { new: true, runValidators: true },
+    );
+    if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -632,12 +696,16 @@ app.put("/users/acceptInvite/:id", auth, async function (req, res) {
       message: "User updated",
       user: updatedUser,
     });
+
+    const deletedInvite = await Invites.findByIdAndDelete(req.body.inviteId);
+    if (!deletedInvite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
   } catch (e) {
     console.error(e);
     res.status(500).send("Error updating user");
   }
 });
-
 
 // DELETE /delete - Delete a User
 app.delete("/users/:id", auth, async function (req, res) {
@@ -656,16 +724,25 @@ app.delete("/users/:id", auth, async function (req, res) {
 
 // AUTH
 
-app.post('/auth/login', async (req, res) => {
+app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+    return res.status(401).json({ error: "Invalid credentials" });
   }
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
+  console.log("TOKEN: " + token)
+  
+  // Set HTTP-only cookie
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true, // Only send over HTTPS
+    sameSite: 'strict',
+    maxAge: 3600000 // 1 hour
+  });
+  
+  res.json({ user: { id: user._id, username: user.username, email: user.email } });
 });
-
 
 // AI
 
@@ -693,11 +770,12 @@ app.post("/ai/chat", async function (req, res) {
   try {
     const response = await ai.models.generateContent({
       model: model,
-      contents: "You are a helpful assistant in a calendar application. User: " + req.body.content
+      contents:
+        "You are a helpful assistant in a calendar application. User: " +
+        req.body.content,
     });
     return res.json({ response: response.text });
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
     res.status(500).send("Error getting AI response");
   }
@@ -721,5 +799,4 @@ app.post("/notif", async function (req, res) {
     console.error(e);
     res.status(500).send("Error sending email");
   }
-
 });

@@ -10,15 +10,21 @@
 GET {{baseUrl}}/
 
 ### GET USER
-GET {{baseUrl}}/users/69c9f7cb450c1ed342fd087a
+GET {{baseUrl}}/users/69ed7236ef963778cd951f2d
+
+### GET USER'S GROUPS
+GET {{baseUrl}}/users/groups/69ed7236ef963778cd951f2d
+
+### GET USER'S USERNAME
+GET {{baseUrl}}/users/username/TestUser01
 
 ### CREATE USER (mock)
-POST {{baseUrl}}/users
+POST {{baseUrl}}/users/signup
 Content-Type: application/json
 
 {
   "username": "TestUser01",
-  "email": "Test@example.com",
+  "email": "Test2@example.com",
   "password": "P@ssw0rd123"
 }
 
@@ -27,7 +33,7 @@ POST {{baseUrl}}/auth/Login
 Content-Type: application/json
 
 {
-  "email": "Test@example.com",
+  "email": "Test2@example.com",
   "password": "P@ssw0rd123"
 }
 
@@ -50,8 +56,7 @@ Authorization: Bearer {{token}}
 
 
 ### TASKS - READ BY USER (set @userId first)
-GET {{baseUrl}}/tasks/{{userId}}
-Authorization: Bearer {{token}}
+GET {{baseUrl}}/tasks/user/bob3@gmail.com
 
 ### TASKS - READ ONE (set @taskId first)
 GET {{baseUrl}}/tasks/{{taskId}}
@@ -99,15 +104,22 @@ Content-Type: application/json
 
 ### INVITES - CREATE
 POST {{baseUrl}}/invites
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "senderId": "{{userId}}",
+  "senderId": "69ed7236ef963778cd951f2d",
   "recipientId": "6995e27b138a86eac259620c",
-  "groupId": "{{groupId}}"
+  "groupId": "10"
 }
 
+### INVITES - ACCEPT
+
+PUT {{baseUrl}}/users/acceptInvite/69ed7236ef963778cd951f2d
+Content-Type: application/json
+
+{
+  "groups": {"id" : "69ed94716d1997748b437a18", "name": "Test Group 1"}
+}
 
 ### TAGS - READ ALL
 GET {{baseUrl}}/tags
@@ -157,3 +169,5 @@ Content-Type: application/json
 }
 
 
+### DECLINE INVITE
+DELETE {{baseUrl}}/invites/delete/69edaf70870c7c3863dabf48

@@ -5,16 +5,21 @@ import Calendar from "./components/calendar";
 import TaskModal from "./components/taskModal";
 import TaskList from "./components/list";
 import LoginModal from "./components/loginModal";
+import InboxModal from "./components/inboxModal";
 import ColorModal from "./components/colorModal";
 import GroupList from "./components/groupList";
 import Chat from "./components/chat";
+import GroupModal from "./components/groupModal";
+import { deleteTask } from "./utils/eventUtil";
 
 function App() {
   const [tasks, setTasks] = useState([]);
   const [authUser, setAuthUser] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
   const [colors, setColors] = useState({
     primary: "#fefeff",
@@ -39,7 +44,6 @@ function App() {
     });
 
   const TooltipBox = () => {
-    console.log(tooltip.event);
     if (!tooltip.visible || !tooltip.event) return null;
     const { title, start, end } = tooltip.event;
 
@@ -62,51 +66,145 @@ function App() {
     setColors((prev) => ({ ...prev, [key]: value }));
   };
 
-  const groupList = [
-    { id: 1, name: "grup1" },
-    { id: 2, name: "grup2" },
-    { id: 3, name: "grup3" },
-  ];
-
   const [chatList, setChatList] = useState([
     { from: "assistant", message: "How can I help you?" },
-    { from: "user", message: "I don't know" },
   ]);
-
-  const [selectedTask, setSelectedTask] = useState(null);
 
   const [taskData, setTaskData] = useState({
     title: "",
     date: "",
     startTime: "",
     endTime: "",
-    repeat: "",
+    reoccurrence: "",
     allDay: false,
     description: "",
     completed: false,
     tags: "",
   });
 
+  const openGroupModal = () => {
+    setIsGroupModalOpen(true);
+  };
+
   function toCalendarTask(task) {
+    const start = new Date(task.startDate);
+    const end = new Date(task.endDate);
+    const isAllDay =
+      start.getHours() === 0 &&
+      start.getMinutes() === 0 &&
+      end.getHours() === 23 &&
+      end.getMinutes() === 59;
     return {
       id: task._id,
       title: task.title,
       start: task.startDate,
       end: task.endDate,
-      allDay: task.allDay,
+      allDay: isAllDay,
+      classNames:
+        task.completedAt && task.completedAt.length > 0
+          ? ["task-completed"]
+          : [],
       extendedProps: {
         description: task.description,
         tags: task.tags,
         completed: task.completed,
-        repeat: task.repeat,
+        reoccurrence: task.reoccurrence,
       },
     };
   }
 
+  const addTask = async (newTask) => {
+    const assignedTo = authUser?.user.email || "guest@local";
+    const payload = {
+      title: newTask.title,
+      description: newTask.extendedProps?.description,
+      tags: newTask.extendedProps?.tags,
+      startDate: newTask.start,
+      endDate: newTask.end,
+      allDay: newTask.allDay,
+      reoccurrence: newTask.extendedProps?.reoccurrence,
+      completed: newTask.extendedProps?.completed,
+      assignedTo,
+      groupId: "0",
+    };
+
+    const response = await fetch("/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Failed to create task");
+    }
+
+    setTasks((prev) => [...prev, toCalendarTask(data.task)]);
+  };
+
+  const removeTask = (taskId) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+  };
+
+  const updateTask = async (taskData) => {
+    const response = await fetch(`/tasks/${taskData.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: taskData.title,
+        description: taskData.extendedProps?.description,
+        tags: taskData.extendedProps?.tags,
+        completed: taskData.extendedProps?.completed,
+        startDate: taskData.start,
+        endDate: taskData.end,
+        allDay: taskData.allDay,
+        reoccurrence: taskData.extendedProps?.reoccurrence,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || "Failed to update task");
+
+    if (taskData.extendedProps?.completed) {
+      await fetch(`/tasks/completed/${taskData.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    console.log("completed value:", taskData.extendedProps?.completed);
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === taskData.id) {
+          const updatedTask = {
+            ...data.task,
+            completedAt: taskData.extendedProps?.completed
+              ? [new Date()]
+              : data.task.completedAt,
+          };
+          console.log("updatedTask:", updatedTask);
+          return toCalendarTask(updatedTask);
+        }
+        return t;
+      }),
+    );
+  };
+
+ // Check localStorage on app load for existing user
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    const savedEmail = localStorage.getItem("email");
+    const savedId = localStorage.getItem("id");
+    if (savedUser) {
+      setAuthUser({user: {id: savedId, username: savedUser, email: savedEmail}}); 
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const response = await fetch("/tasks");
+        const response = await fetch("/tasks/user/"+localStorage.getItem("email"), {
+          credentials: "include",
+        });
         if (response.status === 404) {
           setTasks([]);
           return;
@@ -123,52 +221,17 @@ function App() {
     }
 
     fetchTasks();
-  }, []);
-
-  const addTask = async (newTask) => {
-    const assignedTo = authUser?.email || "guest@local";
-    const payload = {
-      title: newTask.title,
-      description: newTask.extendedProps?.description,
-      tags: newTask.extendedProps?.tags,
-      startDate: newTask.start,
-      endDate: newTask.end,
-      allDay: newTask.allDay,
-      repeat: newTask.extendedProps?.repeat,
-      completed: newTask.extendedProps?.completed,
-      assignedTo,
-      groupId: "0",
-    };
-
-    console.log("PAYLOAD: " + JSON.stringify(payload));
-
-    const response = await fetch("/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data?.error || "Failed to create task");
-    }
-
-    setTasks((prevTasks) => [...prevTasks, toCalendarTask(data.task)]);
-  };
-
-  const removeTask = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
-  };
+  }, [authUser]);
 
   const openTaskModal = (eventInfo = null) => {
-    setSelectedTask(eventInfo);
     setTaskData({
+      id: eventInfo?.id || null,
       title: eventInfo?.title || "",
       date: eventInfo?.date || "",
       startTime: eventInfo?.startTime || "",
       endTime: eventInfo?.endTime || "",
       allDay: eventInfo?.allDay ?? false,
-      repeat: eventInfo?.repeat || "none",
+      reoccurrence: eventInfo?.reoccurrence || "none",
       completed: eventInfo?.completed ?? false,
       description: eventInfo?.description || "",
       tags: eventInfo?.tags || [],
@@ -184,18 +247,35 @@ function App() {
     setIsLoginModalOpen(false);
   };
 
+  const closeInboxModal = () => {
+    setIsInboxModalOpen(false);
+  };
+
   const closeColorModal = () => {
     setIsColorModalOpen(false);
   };
+
+  const closeGroupModal = () => {
+    setIsGroupModalOpen(false);
+  };
+
+  const handleLogout = () => {
+    setAuthUser(null);
+    setTasks([]);
+    localStorage.removeItem("user");
+    localStorage.removeItem("email");
+    localStorage.removeItem("id");
+  }
 
   return (
     <div className="App" style={{ backgroundColor: colors.primary }}>
       <NavBar
         onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={() => setAuthUser(null)}
+        onLogoutClick={handleLogout}
         authUser={authUser}
         onColorClick={() => setIsColorModalOpen(true)}
         Colors={colors}
+        onInboxClick={() => setIsInboxModalOpen(true)}
       />
       <div className="flexbox">
         <div
@@ -220,7 +300,7 @@ function App() {
           <h5>This Week:</h5>
           <TaskList
             tasks={tasks}
-            onRemoveTask={removeTask}
+            openTaskModal={openTaskModal}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
                 setTooltip({
@@ -239,12 +319,22 @@ function App() {
             }}
           />
           <div className="sidebar-spacer" />
-          <GroupList groupList={groupList} />
+          <button
+            onClick={openGroupModal}
+            className="task-button"
+            disabled={!authUser}
+            style={{
+              backgroundColor: colors.tertiary,
+              color: colors.tertiaryText,
+            }}
+          >
+            <i className="fa-solid fa-plus" />
+          </button>
+          <GroupList User={authUser} />
         </div>
         <div className="main-content" style={{ color: colors.primaryText }}>
           <Calendar
             tasks={tasks}
-            onRemoveTask={removeTask}
             Colors={colors}
             eventDidMount={(info) => {
               info.el.addEventListener("mouseenter", (e) => {
@@ -268,17 +358,28 @@ function App() {
           <TaskModal
             isOpen={isTaskModalOpen}
             onClose={closeTaskModal}
-            onAddTask={addTask}
             Colors={colors}
-            OnRemoveTask={removeTask}
+            onRemoveTask={removeTask}
+            deleteTask={deleteTask}
             taskData={taskData}
+            setTasks={setTasks}
+            onAddTask={addTask}
             setTaskData={setTaskData}
+            authUser={authUser}
+            toCalendarTask={toCalendarTask}
+            onUpdateTask={updateTask}
           />
           <LoginModal
             isOpen={isLoginModalOpen}
             onClose={closeLoginModal}
             onAuthSuccess={setAuthUser}
             Colors={colors}
+          />
+          <InboxModal
+            isOpen={isInboxModalOpen}
+            onClose={closeInboxModal}
+            Colors={colors}
+            User={authUser}
           />
           <ColorModal
             isOpen={isColorModalOpen}
@@ -291,7 +392,13 @@ function App() {
             secondaryText={colors.secondaryText}
             tertiaryText={colors.tertiaryText}
           />
-          <Chat chatList={chatList} setChatList={setChatList} />
+          <GroupModal
+            isOpen={isGroupModalOpen}
+            onClose={closeGroupModal}
+            Colors={colors}
+            authUser={authUser}
+          />
+          <Chat chatList={chatList} setChatList={setChatList} Colors={colors} />
         </div>
       </div>
     </div>

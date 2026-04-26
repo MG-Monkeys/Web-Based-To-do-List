@@ -7,12 +7,14 @@
     "client": "cd client && npm start"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "react-markdown": "^10.1.0"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",
     "bad-words": "^4.0.0",
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
     "genai": "^0.0.18",
     "google": "^2.1.0",

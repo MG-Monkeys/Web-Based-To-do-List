@@ -29,7 +29,6 @@ const normalizedCluster = cluster.includes(".mongodb.net")
   : `${cluster}.mongodb.net`;
 const uri = `mongodb+srv://${encodedUser}:${encodedPassword}@${normalizedCluster}/${encodedDbName}?retryWrites=true&w=majority&appName=Cluster0`;
 
-
 // Export the URI
 export default uri;
 
