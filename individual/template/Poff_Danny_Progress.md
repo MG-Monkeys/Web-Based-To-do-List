@@ -58,7 +58,7 @@ Requirements: 6
 
 ## Description
 
-can get by date and tasks will reoccurr. Created a complete endpoint. Can get completion status via completedAgt computations
+can get by date and tasks will reoccurr. Created a complete endpoint. Can get completion status via completedAge computations
 
 LOC: 225
 
@@ -114,5 +114,5 @@ Updated JWT to be more secure
 
 LOC: 443 
 
-Features: 5
-Requirements: 7
+Features: 3
+Requirements: 8

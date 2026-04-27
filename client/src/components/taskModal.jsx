@@ -71,6 +71,24 @@ export default function TaskModal({
 
   const isEditing = !!taskData.id;
 
+  console.log(!authUser);
+
+  if (!authUser) { return (
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{ color: Colors.text }}
+    >
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: Colors.primary }}
+      >
+        <p>Please log in to manage tasks.</p>
+      </div>
+    </div>
+  );}
+
   return (
     <div
       className="modal-overlay"

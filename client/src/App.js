@@ -218,6 +218,12 @@ function App() {
   useEffect(() => {
     async function fetchTasks() {
       try {
+
+        if(!authUser) {
+          setTasks([]);
+          return;
+        }
+
         const response = await fetch(`/tasks/user/${localStorage.getItem("email")}`, {
           credentials: "include",
         });
