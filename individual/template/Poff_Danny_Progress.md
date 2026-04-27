@@ -58,7 +58,7 @@ Requirements: 6
 
 ## Description
 
-can get by date and tasks will reoccurr. Created a complete endpoint. Can get completion status via completedAgt computations
+can get by date and tasks will reoccurr. Created a complete endpoint. Can get completion status via completedAge computations
 
 LOC: 225
 
@@ -90,3 +90,29 @@ LOC: 16
 
 Features: 3
 Requirements: 6
+
+# Week 14
+
+## Description
+
+busy
+
+LOC: 0
+
+Features: 3
+Requirements: 6
+
+# Week 15
+
+## Description
+
+Created the invite inbox
+connected endpoints
+created an api endpoint to get users by their username
+created an api endpoint to get a user's groups
+Updated JWT to be more secure
+
+LOC: 443 
+
+Features: 3
+Requirements: 8
